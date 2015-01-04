@@ -7,13 +7,11 @@ import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
 public class Test {
-	
-	
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		
-		Logger log = LogManager.getLogger(Test.class);  
+
+		Logger log = LogManager.getLogger(Test.class);
 
 		log.debug("Hello World! log debug");
 		log.info("Hello World! Log-info");
