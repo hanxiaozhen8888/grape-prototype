@@ -12,12 +12,6 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 
-	<repositories>
-		<repository>
-			<id>repo</id>
-			<url>file://${basedir}/repo</url>
-		</repository>
-	</repositories>
 
 	<build>
 		<plugins>

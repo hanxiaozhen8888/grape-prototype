@@ -15,8 +15,9 @@ public class Test {
 		
 		Logger log = LogManager.getLogger(Test.class);  
 
-		log.debug("Hello World!");
-
+		log.debug("Hello World! log debug");
+		log.info("Hello World! Log-info");
+		log.error("Hello World! Log error");
 
 		UndirectedGraph<String, DefaultEdge> g = new SimpleGraph<String, DefaultEdge>(
 				DefaultEdge.class);
@@ -41,9 +42,6 @@ public class Test {
 		System.out.println(g);
 
 		System.out.println("hello world. -- yecol");
-		
-		
-
 	}
 
 }
