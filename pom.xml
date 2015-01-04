@@ -4,14 +4,14 @@
 	<groupId>ed.inf.grape</groupId>
 	<artifactId>grape</artifactId>
 	<version>0.1</version>
-	<name>the GRAPE project</name>
+	<name>grape</name>
 	<description>a distributed graph processing system</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<machine.host1>localhost</machine.host1>
 	</properties>
-
 
 	<build>
 		<plugins>
@@ -39,6 +39,14 @@
 				</executions>
 			</plugin>
 		</plugins>
+		<extensions>
+			<!-- Enabling the use of SSH -->
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh-external</artifactId>
+				<version>1.0</version>
+			</extension>
+		</extensions>
 	</build>
 
 	<dependencies>
@@ -52,11 +60,14 @@
 			<artifactId>log4j-core</artifactId>
 			<version>2.1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.jgrapht</groupId>
 			<artifactId>jgrapht-core</artifactId>
 			<version>0.9.0</version>
 		</dependency>
+
+
 	</dependencies>
 
 
