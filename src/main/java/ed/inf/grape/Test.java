@@ -1,13 +1,22 @@
 package ed.inf.grape;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jgrapht.UndirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
 public class Test {
+	
+	
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
+		
+		Logger log = LogManager.getLogger(Test.class);  
+
+		log.debug("Hello World!");
+
 
 		UndirectedGraph<String, DefaultEdge> g = new SimpleGraph<String, DefaultEdge>(
 				DefaultEdge.class);
@@ -32,6 +41,8 @@ public class Test {
 		System.out.println(g);
 
 		System.out.println("hello world. -- yecol");
+		
+		
 
 	}
 
