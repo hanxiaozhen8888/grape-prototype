@@ -43,4 +43,9 @@ public class Partition {
 		return outgoingVertices;
 	}
 
+	public String getPartitionInfo() {
+		return "pID = " + this.partitionId + " | iv = "
+				+ incomingVertices.size() + " | ov = "
+				+ outgoingVertices.size();
+	}
 }
