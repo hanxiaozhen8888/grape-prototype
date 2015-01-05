@@ -8,6 +8,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import ed.inf.grape.core.Coordinator;
+import ed.inf.grape.core.Message;
 import ed.inf.grape.core.Worker;
 import ed.inf.grape.graph.Partition;
 
@@ -230,6 +231,9 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	// {
 	// this.worker.startSuperStep(superStepCounter);
 	// }
+	public void startWork() throws RemoteException {
+		this.worker.startWork();
+	}
 
 	/**
 	 * Sets the initial message for the Worker that has the source vertex.
@@ -329,6 +333,11 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 */
 	public void writeOutput(String outputFilePath) throws RemoteException {
 		this.worker.writeOutput(outputFilePath);
+	}
+
+	public void localComputeCompleted(String workerID, Message message)
+			throws RemoteException {
+		// TODO Auto-generated method stub
 	}
 
 	// public void updateCheckpointFile() throws RemoteException {

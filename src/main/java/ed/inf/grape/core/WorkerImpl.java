@@ -182,14 +182,17 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 					log.debug(this + "Superstep loop started for superstep "
 							+ superstep);
 					try {
-						Partition partition = currentPartitionQueue.take();
-						log.info("runned in the loop");
-						nextPartitionQueue.add(partition);
+						
+						startSuperStep = false;
 						checkAndSendMessage();
+//						Partition partition = currentPartitionQueue.take();
+//						log.info("runned in the loop");
+//						nextPartitionQueue.add(partition);
+//						checkAndSendMessage();
 
-					} catch (InterruptedException e) {
-						log.error("InterruptedException");
-						log.error(e.getStackTrace());
+//					} catch (InterruptedException e) {
+//						log.error("InterruptedException");
+//						log.error(e.getStackTrace());
 					} catch (Exception e) {
 						log.error(e.getStackTrace());
 					}
@@ -207,6 +210,13 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		 */
 		private synchronized void checkAndSendMessage() {
 			log.debug("checkAndSendMessage");
+			
+			try {
+				coordinatorProxy.localComputeCompleted(workerID, new Message("finished."));
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}		
+			
 			// System.out.println(this + "sendingMessage: " + sendingMessage +
 			// " - completedPartitions: " + completedPartitions.size() +
 			// " - totalPartitionsAssigned: " + totalPartitionsAssigned);
@@ -484,9 +494,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param superStepCounter
 	 *            the super step counter
 	 */
-	public void startSuperStep(long superStepCounter) {
-		log.debug("WorkerImpl: startSuperStep - superStepCounter: "
-				+ superStepCounter);
+//	public void startSuperStep(long superStepCounter) {
+//		log.debug("WorkerImpl: startSuperStep - superStepCounter: "
+//				+ superStepCounter);
 
 		// this.superstep = superStepCounter;
 		// // Put all elements in current incoming queue to previous incoming
@@ -512,7 +522,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		// this.currentPartitionQueue.addAll(temp);
 
 		// System.out.println("Partition queue: " + partitionQueue.size());
-	}
+//	}
 
 	/**
 	 * Sets the initial message for the Worker that has the source vertex.
@@ -527,35 +537,35 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 *             the remote exception >>>>>>>
 	 *             42b91fb45356bdb8ce40222761cb75525693696a
 	 */
-//	public void setInitialMessage(
-//			ConcurrentHashMap<Integer, Map<VertexID, List<Message>>> initialMessage)
-//			throws RemoteException {
-//		this.currentIncomingMessages = initialMessage;
-//	}
+	// public void setInitialMessage(
+	// ConcurrentHashMap<Integer, Map<VertexID, List<Message>>> initialMessage)
+	// throws RemoteException {
+	// this.currentIncomingMessages = initialMessage;
+	// }
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see system.Worker#checkPoint(long)
 	 */
-//	@Override
-//	public void checkPoint(long superstep) throws Exception {
-//		System.out.println("WorkerImpl: checkPoint " + superstep);
-//		this.superstep = superstep;
-//		WorkerData wd = new WorkerData(this.nextPartitionQueue,
-//				this.currentIncomingMessages);
-//		// Serialization
-//
-//		// Don't update the currentCheckpointFile until the Master confirms that
-//		// the checkpointing had succeeded in all the Workers.
-//		this.nextCheckpointFile = CHECKPOINTING_DIRECTORY + File.separator
-//				+ workerID + "_" + superstep;
-//		// String newFilePath = CHECKPOINTING_DIRECTORY + File.separator +
-//		// workerID;
-//		GeneralUtils.serialize(this.nextCheckpointFile, wd);
-//		// nextCheckpointFile = tmpFilePath;
-//		// GeneralUtils.renameFile(tmpFilePath, newFilePath);
-//	}
+	// @Override
+	// public void checkPoint(long superstep) throws Exception {
+	// System.out.println("WorkerImpl: checkPoint " + superstep);
+	// this.superstep = superstep;
+	// WorkerData wd = new WorkerData(this.nextPartitionQueue,
+	// this.currentIncomingMessages);
+	// // Serialization
+	//
+	// // Don't update the currentCheckpointFile until the Master confirms that
+	// // the checkpointing had succeeded in all the Workers.
+	// this.nextCheckpointFile = CHECKPOINTING_DIRECTORY + File.separator
+	// + workerID + "_" + superstep;
+	// // String newFilePath = CHECKPOINTING_DIRECTORY + File.separator +
+	// // workerID;
+	// GeneralUtils.serialize(this.nextCheckpointFile, wd);
+	// // nextCheckpointFile = tmpFilePath;
+	// // GeneralUtils.renameFile(tmpFilePath, newFilePath);
+	// }
 
 	/**
 	 * Master checks the heart beat of the worker by calling this method.
@@ -563,9 +573,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
-//	@Override
-//	public void sendHeartBeat() throws RemoteException {
-//	}
+	// @Override
+	// public void sendHeartBeat() throws RemoteException {
+	// }
 
 	/**
 	 * Method to prepare the worker.
@@ -573,57 +583,58 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
-//	@Override
-//	public void startRecovery() throws RemoteException {
-//		System.out.println("WorkerImpl: startRecovery");
-//		this.stopSendingMessage = false;
-//		this.startSuperStep = false;
-//		this.currentPartitionQueue.clear();
-//		this.previousIncomingMessages.clear();
-//		this.outgoingMessages.clear();
-//
-//		WorkerData workerData = (WorkerData) GeneralUtils
-//				.deserialize(this.currentCheckpointFile);
-//		this.currentIncomingMessages = (ConcurrentHashMap<Integer, Map<VertexID, List<Message>>>) workerData
-//				.getMessages();
-//		this.nextPartitionQueue = (BlockingQueue<Partition>) workerData
-//				.getPartitions();
-//
-//	}
+	// @Override
+	// public void startRecovery() throws RemoteException {
+	// System.out.println("WorkerImpl: startRecovery");
+	// this.stopSendingMessage = false;
+	// this.startSuperStep = false;
+	// this.currentPartitionQueue.clear();
+	// this.previousIncomingMessages.clear();
+	// this.outgoingMessages.clear();
+	//
+	// WorkerData workerData = (WorkerData) GeneralUtils
+	// .deserialize(this.currentCheckpointFile);
+	// this.currentIncomingMessages = (ConcurrentHashMap<Integer, Map<VertexID,
+	// List<Message>>>) workerData
+	// .getMessages();
+	// this.nextPartitionQueue = (BlockingQueue<Partition>) workerData
+	// .getPartitions();
+	//
+	// }
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see system.Worker#finishRecovery()
 	 */
-//	@Override
-//	public void finishRecovery() throws RemoteException {
-//		System.out.println("WorkerImpl: finishRecovery");
-//		try {
-//			// Do checkpointing after assigning recovered partitions.
-//			checkPoint(this.superstep);
-//		} catch (Exception e) {
-//			System.out.println("checkpoint failure");
-//			throw new RemoteException();
-//		}
-//	}
+	// @Override
+	// public void finishRecovery() throws RemoteException {
+	// System.out.println("WorkerImpl: finishRecovery");
+	// try {
+	// // Do checkpointing after assigning recovered partitions.
+	// checkPoint(this.superstep);
+	// } catch (Exception e) {
+	// System.out.println("checkpoint failure");
+	// throw new RemoteException();
+	// }
+	// }
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see system.Worker#addRecoveredData(system.Partition, java.util.Map)
 	 */
-//	public void addRecoveredData(Partition partition,
-//			Map<VertexID, List<Message>> messages) throws RemoteException {
-//		System.out.println("WorkerImpl: addRecoveredData");
-//		// System.out.println("Partition " + partition.getPartitionID());
-//		// System.out.println("Messages: " + messages);
-//		if (messages != null) {
-//			this.currentIncomingMessages.put(partition.getPartitionID(),
-//					messages);
-//		}
-//		this.nextPartitionQueue.add(partition);
-//	}
+	// public void addRecoveredData(Partition partition,
+	// Map<VertexID, List<Message>> messages) throws RemoteException {
+	// System.out.println("WorkerImpl: addRecoveredData");
+	// // System.out.println("Partition " + partition.getPartitionID());
+	// // System.out.println("Messages: " + messages);
+	// if (messages != null) {
+	// this.currentIncomingMessages.put(partition.getPartitionID(),
+	// messages);
+	// }
+	// this.nextPartitionQueue.add(partition);
+	// }
 
 	/** shutdown the worker */
 	public void shutdown() throws RemoteException {
@@ -639,41 +650,46 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param outputFilePath
 	 *            Represents the output file for writing the results
 	 */
-//	public void writeOutput(String outputFilePath) throws RemoteException {
-//		System.out.println("Printing the final state of the partitions");
-//		Iterator<Partition> iter = nextPartitionQueue.iterator();
-//		// Append the appropriate content to the output file.
-//		StringBuilder contents = new StringBuilder();
-//		while (iter.hasNext()) {
-//			contents.append(iter.next());
-//		}
-//		GeneralUtils.writeToFile(outputFilePath, contents.toString(), true);
-//	}
+	// public void writeOutput(String outputFilePath) throws RemoteException {
+	// System.out.println("Printing the final state of the partitions");
+	// Iterator<Partition> iter = nextPartitionQueue.iterator();
+	// // Append the appropriate content to the output file.
+	// StringBuilder contents = new StringBuilder();
+	// while (iter.hasNext()) {
+	// contents.append(iter.next());
+	// }
+	// GeneralUtils.writeToFile(outputFilePath, contents.toString(), true);
+	// }
 
 	/*
 	 * (non-Javadoc)
 	 * 
 	 * @see system.Worker#updateCheckpointFile()
 	 */
-//	@Override
-//	public void updateCheckpointFile() throws RemoteException {
-//		if (this.currentCheckpointFile != null) {
-//			GeneralUtils.removeFile(this.currentCheckpointFile);
-//		}
-//		this.currentCheckpointFile = this.nextCheckpointFile;
-//		System.out.println("WorkerImpl: Updating checkpoint file: "
-//				+ this.currentCheckpointFile);
-//	}
-
+	// @Override
+	// public void updateCheckpointFile() throws RemoteException {
+	// if (this.currentCheckpointFile != null) {
+	// GeneralUtils.removeFile(this.currentCheckpointFile);
+	// }
+	// this.currentCheckpointFile = this.nextCheckpointFile;
+	// System.out.println("WorkerImpl: Updating checkpoint file: "
+	// + this.currentCheckpointFile);
+	// }
 
 	public void receiveMessage(Message incomingMessages) throws RemoteException {
 		// TODO Auto-generated method stub
-		
+
 		log.info(incomingMessages);
 	}
 
 	public void writeOutput(String outputFilePath) throws RemoteException {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	public void startWork() throws RemoteException {
+		// TODO Auto-generated method stub
+		log.info("Worker receive the flag from coordinator, begin to work.");
+		this.startSuperStep = true;
 	}
 }

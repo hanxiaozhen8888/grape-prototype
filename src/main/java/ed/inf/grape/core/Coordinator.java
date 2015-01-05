@@ -1,18 +1,13 @@
 package ed.inf.grape.core;
 
-import java.io.File;
-import java.io.IOException;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -23,11 +18,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ed.inf.grape.Test;
 import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
-import ed.inf.grape.graph.Partition;
 
 /**
  * The Class Master.
@@ -154,32 +147,6 @@ public class Coordinator extends UnicastRemoteObject implements
 		return (Worker2Coordinator) UnicastRemoteObject.exportObject(
 				workerProxy, 0);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see api.Client2Master#putTask(java.lang.String, java.lang.String) Steps
-	 * 1. graph file -> partitions 2. assign partitions to workers through Proxy
-	 * 3. send partition assignment info to all workers through Proxy 4. start
-	 * super step execution
-	 */
-	// @Override
-	// public <T> void putTask(String graphFileName, String vertexClassName,
-	// long sourceVertexID, Data<T> initData) throws RemoteException {
-	// try {
-	// startTime = System.currentTimeMillis();
-	// GraphPartitioner graphPartitioner = new GraphPartitioner(
-	// graphFileName, vertexClassName);
-	// assignPartitions(graphPartitioner, sourceVertexID, initData);
-	// sendWorkerPartitionInfo();
-	// healthManager = new HealthManager(this);
-	// startSuperStep();
-	// } catch (NumberFormatException | IOException e) {
-	// e.printStackTrace();
-	// } catch (PropertyNotFoundException e) {
-	// e.printStackTrace();
-	// }
-	// }
 
 	/**
 	 * Gets the worker proxy map info.
@@ -453,29 +420,6 @@ public class Coordinator extends UnicastRemoteObject implements
 	// }
 
 	/**
-	 * Start super step.
-	 * 
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// public void startSuperStep() throws RemoteException {
-	// if ((superstep % CHECKPOINT_FREQUENCY) == 0) {
-	// if (superstep == 0 || superstep != lastCheckpointedSuperstep) {
-	// checkPoint();
-	// }
-	// }
-	// System.out.println("Master: Starting Superstep " + superstep);
-	// // System.out.println("Active worker set: " + this.activeWorkerSet);
-	// this.workerAcknowledgementSet.clear();
-	// this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
-	//
-	// for (String workerID : this.activeWorkerSet) {
-	// this.workerProxyMap.get(workerID).startSuperStep(superstep);
-	// }
-	// this.activeWorkerSet.clear();
-	// }
-
-	/**
 	 * start checkpointing in master.
 	 */
 	// public void checkPoint() {
@@ -608,6 +552,48 @@ public class Coordinator extends UnicastRemoteObject implements
 	public String takeResult() throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public void putTask(String graphFilename) throws RemoteException {
+		// TODO Auto-generated method stub
+
+		log.info("receive task with graph file = " + graphFilename);
+
+		startTime = System.currentTimeMillis();
+		// TODO partition the graph.
+		// TODO assign the partitions to available workers. (through Proxys),
+		// send partition info to all workers
+		// TODO init health manager
+
+		// test only
+		startTest();
+	}
+
+	// test only
+	public void startTest() {
+
+		log.info("Master: Starting Superstep ");
+		// System.out.println("Active worker set: " + this.activeWorkerSet);
+		this.workerAcknowledgementSet.clear();
+		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
+
+		for (String workerID : this.activeWorkerSet) {
+			try {
+				this.workerProxyMap.get(workerID).startWork();
+			} catch (RemoteException e) {
+				log.error(e.getStackTrace());
+			}
+		}
+		this.activeWorkerSet.clear();
+	}
+
+	public void localComputeCompleted(String workerID, Message message)
+			throws RemoteException {
+		// TODO Auto-generated method stub
+
+		log.info("Coordinator received info worker " + workerID + " saying: "
+				+ message);
+
 	}
 
 }

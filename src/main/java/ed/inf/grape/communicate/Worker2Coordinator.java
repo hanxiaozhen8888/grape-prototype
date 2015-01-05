@@ -2,8 +2,8 @@ package ed.inf.grape.communicate;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
-import java.util.Set;
 
+import ed.inf.grape.core.Message;
 import ed.inf.grape.core.Worker;
 
 /**
@@ -44,8 +44,8 @@ public interface Worker2Coordinator extends java.rmi.Remote, Serializable {
 	 * @param workerID
 	 *            the worker id
 	 */
-//	public void superStepCompleted(String workerID, Set<String> activeWorkerIDs)
-//			throws RemoteException;
+	public void localComputeCompleted(String workerID, Message message)
+			throws RemoteException;
 
 	/**
 	 * Defines a deployment convenience to stop each registered

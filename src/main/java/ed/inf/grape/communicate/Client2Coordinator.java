@@ -25,8 +25,10 @@ public interface Client2Coordinator extends Remote {
 	 * @param vertexClassName
 	 *            the application specific vertex class name
 	 */
-	// public <T> void putTask(String graphFileName, String vertexClassName,
-	// long sourceVertexID, Data<T> data) throws RemoteException;
+//	 public <T> void putTask(String graphFileName, String vertexClassName,
+//	 long sourceVertexID, Data<T> data) throws RemoteException;
+	 
+	 public void putTask(String graphFilename) throws RemoteException;
 
 	/**
 	 * Take the file (specified by its name) that stores the computed result

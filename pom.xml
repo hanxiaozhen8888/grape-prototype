@@ -45,6 +45,25 @@
 						</goals>
 					</execution>
 					<execution>
+						<id>build-client</id>
+						<configuration>
+							<appendAssemblyId>false</appendAssemblyId>
+							<archive>
+								<manifest>
+									<mainClass>ed.inf.grape.client.CommunicateTest</mainClass>
+								</manifest>
+							</archive>
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+							<finalName>${project.artifactId}-client-${project.version}</finalName>
+						</configuration>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+					<execution>
 						<id>build-worker</id>
 						<configuration>
 							<appendAssemblyId>false</appendAssemblyId>
