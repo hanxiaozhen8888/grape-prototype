@@ -14,7 +14,7 @@ public interface Worker extends Remote {
 
 	public int getNumThreads() throws RemoteException;
 
-	public void setMasterProxy(Worker2Coordinator coordinatorProxy)
+	public void setCoordinatorProxy(Worker2Coordinator coordinatorProxy)
 			throws RemoteException;
 
 	public void addPartition(Partition partition) throws RemoteException;
@@ -27,6 +27,8 @@ public interface Worker extends Remote {
 			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException;
 
 	public void halt() throws RemoteException;
+
+	public void receiveMessage(Message incomingMessages) throws RemoteException;
 
 	// for pregel model
 
@@ -42,13 +44,13 @@ public interface Worker extends Remote {
 
 	// for fault-tolerance
 
-	public void sendHeartBeat() throws RemoteException;
+	// public void sendHeartBeat() throws RemoteException;
 
-	public void checkPoint(long superstep) throws Exception;
+	// public void checkPoint(long superstep) throws Exception;
 
-	public void startRecovery() throws RemoteException;
+	// public void startRecovery() throws RemoteException;
 
-	public void finishRecovery() throws RemoteException;
+	// public void finishRecovery() throws RemoteException;
 
 	// public void addRecoveredData(Partition partition,
 	// Map<VertexID, List<Message>> messages) throws RemoteException;
