@@ -8,7 +8,9 @@ import java.rmi.server.UnicastRemoteObject;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -560,31 +562,51 @@ public class Coordinator extends UnicastRemoteObject implements
 		log.info("receive task with graph file = " + graphFilename);
 
 		startTime = System.currentTimeMillis();
+		assignPartitions();
 		// TODO partition the graph.
 		// TODO assign the partitions to available workers. (through Proxys),
 		// send partition info to all workers
 		// TODO init health manager
 
 		// test only
-		startTest();
+		startWork();
 	}
 
-	// test only
-	public void startTest() {
+	public void assignPartitions() {
 
-		log.info("Master: Starting Superstep ");
-		// System.out.println("Active worker set: " + this.activeWorkerSet);
-		this.workerAcknowledgementSet.clear();
-		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
-
-		for (String workerID : this.activeWorkerSet) {
-			try {
-				this.workerProxyMap.get(workerID).startWork();
-			} catch (RemoteException e) {
-				log.error(e.getStackTrace());
-			}
+		Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
+				.entrySet().iterator();
+		while (workerMapIter.hasNext()) {
+			activeWorkerSet.add(workerMapIter.next().getValue().getWorkerID());
 		}
-		this.activeWorkerSet.clear();
+
+		// Iterator<Map.Entry<String, WorkerProxy>> workerMapIter =
+		// workerProxyMap
+		// .entrySet().iterator();
+		// while (iter.hasNext()) {
+		// // If the remaining partitions is greater than the number of the
+		// // workers, start iterating from the beginning again.
+		// if (!workerMapIter.hasNext()) {
+		// workerMapIter = workerProxyMap.entrySet().iterator();
+		// }
+		// partition = iter.next();
+		//
+		// WorkerProxy workerProxy = workerMapIter.next().getValue();
+		// // Get the partition that has the sourceVertex, and add the worker
+		// // that has the partition to the worker set from which
+		// // acknowledgments will be received.
+		// if (partition.getPartitionID() == sourceVertex_partitionID) {
+		// activeWorkerSet.add(workerProxy.getWorkerID());
+		// }
+		// System.out.println("Adding partition  "
+		// + partition.getPartitionID() + " to worker "
+		// + workerProxy.getWorkerID());
+		// workerProxy.addPartition(partition);
+		// partitionWorkerMap.put(partition.getPartitionID(),
+		// workerProxy.getWorkerID());
+		// }
+		//
+
 	}
 
 	public void localComputeCompleted(String workerID, Message message)
@@ -593,6 +615,26 @@ public class Coordinator extends UnicastRemoteObject implements
 
 		log.info("Coordinator received info worker " + workerID + " saying: "
 				+ message);
+
+	}
+
+	public void startWork() throws RemoteException {
+		// TODO Auto-generated method stub
+		log.info("Master: Starting Superstep ");
+		// System.out.println("Active worker set: " + this.activeWorkerSet);
+		this.workerAcknowledgementSet.clear();
+		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
+		log.info("this.activeWorkerSet = " + this.activeWorkerSet.size());
+
+		for (String workerID : this.activeWorkerSet) {
+			try {
+				log.debug("workerID = " + workerID);
+				this.workerProxyMap.get(workerID).startWork();
+			} catch (RemoteException e) {
+				log.error(e.getStackTrace());
+			}
+		}
+		this.activeWorkerSet.clear();
 
 	}
 

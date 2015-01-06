@@ -38,14 +38,17 @@ public interface Worker2Coordinator extends java.rmi.Remote, Serializable {
 			int numWorkerThreads) throws RemoteException;
 
 	/**
-	 * Send a message to the Master saying that the current superstep has been
+	 * Send a message to the Master saying that the current computation has been
 	 * completed.
 	 * 
 	 * @param workerID
 	 *            the worker id
 	 */
+
 	public void localComputeCompleted(String workerID, Message message)
 			throws RemoteException;
+
+	public void startWork() throws RemoteException;
 
 	/**
 	 * Defines a deployment convenience to stop each registered

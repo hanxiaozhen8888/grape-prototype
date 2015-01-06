@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.util.Config;
 
 /**
  * Represents the computation node.
@@ -81,7 +82,24 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** The super step counter. */
 	private long superstep = 0;
 
+	/** Limitation of threads on each worker */
+	private static int MAX_THREAD_LIMITATION = 0;
+
 	static Logger log = LogManager.getLogger(Coordinator.class);
+
+	static {
+
+		try {
+			MAX_THREAD_LIMITATION = Config.getInstance().getIntProperty(
+					"THREAD_LIMIT_ON_EACH_MACHINE");
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		if (MAX_THREAD_LIMITATION == 0) {
+			MAX_THREAD_LIMITATION = Integer.MAX_VALUE;
+		}
+	}
 
 	/**
 	 * Instantiates a new worker.
@@ -111,11 +129,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		this.previousIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.outgoingMessages = new ConcurrentHashMap<String, List<Message>>();
 		// TODO:change this when deploy
-		this.numThreads = Math.max(Runtime.getRuntime().availableProcessors(),
-				2);
+		this.numThreads = Math.min(Runtime.getRuntime().availableProcessors(),
+				MAX_THREAD_LIMITATION);
 		this.stopSendingMessage = false;
 		for (int i = 0; i < numThreads; i++) {
-			log.debug("Starting thread " + (i + 1));
+			log.debug("Starting Thread " + (i + 1));
 			WorkerThread workerThread = new WorkerThread();
 			workerThread.start();
 		}
@@ -177,22 +195,21 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
-				log.debug(this + "startSuperStep: " + startSuperStep);
 				while (startSuperStep) {
 					log.debug(this + "Superstep loop started for superstep "
 							+ superstep);
 					try {
-						
+
 						startSuperStep = false;
 						checkAndSendMessage();
-//						Partition partition = currentPartitionQueue.take();
-//						log.info("runned in the loop");
-//						nextPartitionQueue.add(partition);
-//						checkAndSendMessage();
+						// Partition partition = currentPartitionQueue.take();
+						// log.info("runned in the loop");
+						// nextPartitionQueue.add(partition);
+						// checkAndSendMessage();
 
-//					} catch (InterruptedException e) {
-//						log.error("InterruptedException");
-//						log.error(e.getStackTrace());
+						// } catch (InterruptedException e) {
+						// log.error("InterruptedException");
+						// log.error(e.getStackTrace());
 					} catch (Exception e) {
 						log.error(e.getStackTrace());
 					}
@@ -201,34 +218,25 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		}
 
 		/**
-		 * Check and send message. <<<<<<< HEAD
+		 * Check and send message.
 		 * 
 		 * @throws RemoteException
-		 *             =======
-		 * 
-		 *             >>>>>>> 42b91fb45356bdb8ce40222761cb75525693696a
 		 */
 		private synchronized void checkAndSendMessage() {
 			log.debug("checkAndSendMessage");
-			
+
+			Message m2Worker = new Message("message to worker: hello worker");
+			Message m2Coordinator = new Message(
+					"message to coordinator: hello coordinator");
+
 			try {
-				coordinatorProxy.localComputeCompleted(workerID, new Message("finished."));
+				coordinatorProxy.localComputeCompleted(workerID, m2Coordinator);
 			} catch (RemoteException e) {
 				e.printStackTrace();
-			}		
-			
-			// System.out.println(this + "sendingMessage: " + sendingMessage +
-			// " - completedPartitions: " + completedPartitions.size() +
-			// " - totalPartitionsAssigned: " + totalPartitionsAssigned);
-			// if (!stopSendingMessage
-			// && (nextPartitionQueue.size() == totalPartitionsAssigned)) {
-			// stopSendingMessage = true;
-			// System.out.println(this + " WorkerImpl: Superstep " + superstep
-			// + " completed.");
-			// startSuperStep = false;
-			// for (Entry<String, Map<VertexID, List<Message>>> entry :
-			// outgoingMessages
-			// .entrySet()) {
+			}
+
+			log.debug(this + "sendingMessage: " + m2Worker);
+
 			// try {
 			// worker2WorkerProxy.sendMessage(entry.getKey(),
 			// entry.getValue());
@@ -236,28 +244,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			// System.out.println("Can't send message to Worker "
 			// + entry.getKey() + " which is down");
 			// }
-			// }
-			//
-			// // This worker will be active only if it has some messages
-			// // queued up in the next superstep.
-			// // activeWorkerSet will have all the workers who will be active
-			// // in the next superstep.
-			// Set<String> activeWorkerSet = new HashSet<String>();
-			// activeWorkerSet.addAll(outgoingMessages.keySet());
-			// if (currentIncomingMessages.size() > 0) {
-			// activeWorkerSet.add(workerID);
-			// }
-			// // Send a message to the Master saying that this superstep has
-			// // been completed.
-			// try {
-			// masterProxy.superStepCompleted(workerID, activeWorkerSet);
-			// } catch (RemoteException e) {
-			// e.printStackTrace();
-			// }
-			//
-			// }
-			// System.out.println(this + " after sendMessage check " +
-			// sendingMessage);
 
 		}
 	}
@@ -332,7 +318,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	}
 
 	/**
-	 * Sets the worker partition info. <<<<<<< HEAD
+	 * Sets the worker partition info.
 	 * 
 	 * @param totalPartitionsAssigned
 	 *            the total partitions assigned
@@ -341,7 +327,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param mapWorkerIdToWorker
 	 *            the map worker id to worker
 	 * @throws RemoteException
-	 *             =======
 	 * 
 	 * @param totalPartitionsAssigned
 	 *            the total partitions assigned
@@ -350,8 +335,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param mapWorkerIdToWorker
 	 *            the map worker id to worker
 	 * @throws RemoteException
-	 *             the remote exception >>>>>>>
-	 *             42b91fb45356bdb8ce40222761cb75525693696a
+	 *             the remote exception
 	 */
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
 			Map<Integer, String> mapPartitionIdToWorkerId,
@@ -377,10 +361,10 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			System.setSecurityManager(new SecurityManager());
 		}
 		try {
-			String masterMachineName = args[0];
-			log.info("masterMachineName " + masterMachineName);
+			String coordinatorMachineName = args[0];
+			log.info("masterMachineName " + coordinatorMachineName);
 
-			String masterURL = "//" + masterMachineName + "/"
+			String masterURL = "//" + coordinatorMachineName + "/"
 					+ Worker2Coordinator.SERVICE_NAME;
 			// Registry registry =
 			// LocateRegistry.getRegistry(masterMachineName);
@@ -494,35 +478,35 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param superStepCounter
 	 *            the super step counter
 	 */
-//	public void startSuperStep(long superStepCounter) {
-//		log.debug("WorkerImpl: startSuperStep - superStepCounter: "
-//				+ superStepCounter);
+	// public void startSuperStep(long superStepCounter) {
+	// log.debug("WorkerImpl: startSuperStep - superStepCounter: "
+	// + superStepCounter);
 
-		// this.superstep = superStepCounter;
-		// // Put all elements in current incoming queue to previous incoming
-		// queue
-		// // and clear the current incoming queue.
-		// this.previousIncomingMessages.clear();
-		// this.previousIncomingMessages.putAll(this.currentIncomingMessages);
-		// this.currentIncomingMessages.clear();
-		//
-		// this.stopSendingMessage = false;
-		// this.startSuperStep = true;
-		//
-		// this.outgoingMessages.clear();
-		// // Put all elements in completed partitions back to partition queue
-		// and
-		// // clear the completed partitions.
-		// // Note: To avoid concurrency issues, it is very important that
-		// // completed partitions is cleared before the Worker threads start to
-		// // operate on the partition queue in the next superstep
-		// BlockingQueue<Partition> temp = new LinkedBlockingDeque<Partition>(
-		// nextPartitionQueue);
-		// this.nextPartitionQueue.clear();
-		// this.currentPartitionQueue.addAll(temp);
+	// this.superstep = superStepCounter;
+	// // Put all elements in current incoming queue to previous incoming
+	// queue
+	// // and clear the current incoming queue.
+	// this.previousIncomingMessages.clear();
+	// this.previousIncomingMessages.putAll(this.currentIncomingMessages);
+	// this.currentIncomingMessages.clear();
+	//
+	// this.stopSendingMessage = false;
+	// this.startSuperStep = true;
+	//
+	// this.outgoingMessages.clear();
+	// // Put all elements in completed partitions back to partition queue
+	// and
+	// // clear the completed partitions.
+	// // Note: To avoid concurrency issues, it is very important that
+	// // completed partitions is cleared before the Worker threads start to
+	// // operate on the partition queue in the next superstep
+	// BlockingQueue<Partition> temp = new LinkedBlockingDeque<Partition>(
+	// nextPartitionQueue);
+	// this.nextPartitionQueue.clear();
+	// this.currentPartitionQueue.addAll(temp);
 
-		// System.out.println("Partition queue: " + partitionQueue.size());
-//	}
+	// System.out.println("Partition queue: " + partitionQueue.size());
+	// }
 
 	/**
 	 * Sets the initial message for the Worker that has the source vertex.
@@ -678,7 +662,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 	public void receiveMessage(Message incomingMessages) throws RemoteException {
 		// TODO Auto-generated method stub
-
 		log.info(incomingMessages);
 	}
 

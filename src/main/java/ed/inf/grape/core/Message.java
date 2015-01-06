@@ -1,6 +1,10 @@
 package ed.inf.grape.core;
 
-public class Message {
+import java.io.Serializable;
+
+public class Message implements Serializable {
+
+	private static final long serialVersionUID = -6215563083195145662L;
 
 	private String message;
 

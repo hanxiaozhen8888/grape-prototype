@@ -231,10 +231,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	// {
 	// this.worker.startSuperStep(superStepCounter);
 	// }
-	public void startWork() throws RemoteException {
-		this.worker.startWork();
-	}
-
 	/**
 	 * Sets the initial message for the Worker that has the source vertex.
 	 * 
@@ -337,7 +333,12 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 
 	public void localComputeCompleted(String workerID, Message message)
 			throws RemoteException {
+		this.coordinator.localComputeCompleted(workerID, message);
+	}
+
+	public void startWork() throws RemoteException {
 		// TODO Auto-generated method stub
+		this.worker.startWork();
 	}
 
 	// public void updateCheckpointFile() throws RemoteException {
