@@ -35,6 +35,18 @@ public class Partition {
 		return fragment;
 	}
 
+	public boolean addVertex(String vertex) {
+		return fragment.addVertex(vertex);
+	}
+
+	public edge addEdge(String sourceVertex, String targetVertex) {
+		return fragment.addEdge(sourceVertex, targetVertex);
+	}
+
+	// public boolean addIncommingEdge(String vertex) {
+	// return fragment.addVertex(vertex);
+	// }
+
 	public HashMap<String, Integer> getIncomingVertices() {
 		return incomingVertices;
 	}
@@ -44,7 +56,9 @@ public class Partition {
 	}
 
 	public String getPartitionInfo() {
-		return "pID = " + this.partitionId + " | iv = "
+		return "pID = " + this.partitionId + " | vertices = "
+				+ fragment.vertexSet().size() + " | edges = "
+				+ fragment.edgeSet().size() + " | iv = "
 				+ incomingVertices.size() + " | ov = "
 				+ outgoingVertices.size();
 	}
