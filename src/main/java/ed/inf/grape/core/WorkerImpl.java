@@ -110,7 +110,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	public WorkerImpl() throws RemoteException {
 		InetAddress address = null;
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				"YYYMMMdd.HHmmss.SSS");
+				"yyyyMMdd.HHmmss.SSS");
 		String timestamp = simpleDateFormat.format(new Date());
 
 		String hostName = new String();
