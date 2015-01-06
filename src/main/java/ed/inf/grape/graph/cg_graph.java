@@ -42,7 +42,8 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 	public Vector<String> getParents(String n) {
 		Vector<String> ps = new Vector<String>();
 		for (edge e : this.incomingEdgesOf(n)) {
-			ps.add((String) e.getSource());
+			ps.add((String) this.getEdgeSource(e));
+
 		}
 		return ps;
 	}
@@ -56,7 +57,7 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 	public Vector<String> getChildren(String n) {
 		Vector<String> cs = new Vector<String>();
 		for (edge e : this.outgoingEdgesOf(n)) {
-			cs.add((String) e.getTarget());
+			cs.add((String) this.getEdgeTarget(e));
 		}
 		return cs;
 	}
@@ -564,7 +565,7 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 			}
 			cancc = reachAncestor1.get(currentnode);
 			for (edge e : this.outgoingEdgesOf(currentnode)) {
-				String endnode = (String) e.getTarget();
+				String endnode = (String) this.getEdgeTarget(e);
 				HashSet<String> vec = reachAncestor1.get(endnode);
 				if (vec == null) {
 					vec = new HashSet<String>();
@@ -595,7 +596,7 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 			}
 			cdess = reachDescendent1.get(currentnode);
 			for (edge e : this.incomingEdgesOf(currentnode)) {
-				String startnode = (String) e.getSource();
+				String startnode = (String) this.getEdgeSource(e);
 				HashSet<String> vec = reachDescendent1.get(startnode);
 				if (vec == null) {
 					vec = new HashSet<String>();
@@ -703,14 +704,14 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 			if (out.size() > 0) {
 				String node = out.get(0);
 				for (edge e : this.outgoingEdgesOf(node)) {
-					String oldnode = (String) e.getTarget();
+					String oldnode = (String) this.getEdgeTarget(e);
 					String newnode = nodeMap.get(oldnode);
 					if (condensedGraph.containsEdge(node, newnode) == false)
 						condensedGraph.addEdge(node, newnode);
 				}
 
 				for (edge e : this.incomingEdgesOf(node)) {
-					String oldnode = (String) e.getSource();
+					String oldnode = (String) this.getEdgeSource(e);
 					String newnode = nodeMap.get(oldnode);
 					if (condensedGraph.containsEdge(newnode, node) == false) {
 						condensedGraph.addEdge(newnode, node);
@@ -730,8 +731,8 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 		for (String n : this.vertexSet())
 			DG.addVertex(n);
 		for (edge e : this.edgeSet()) {
-			String from = (String) e.getSource();
-			String to = (String) e.getTarget();
+			String from = (String) this.getEdgeSource(e);
+			String to = (String) this.getEdgeTarget(e);
 			DG.addEdge(from, to, e);
 		}
 		return DG;
@@ -775,8 +776,8 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 		}
 		System.out.println("Constructed nodes: " + this.vertexSet().size());
 		for (edge e : elist) {
-			String fn = (String) e.getSource();
-			String tn = (String) e.getTarget();
+			String fn = (String) this.getEdgeSource(e);
+			String tn = (String) this.getEdgeTarget(e);
 			this.addEdge(fn, tn, e);
 		}
 		System.out.println("Constructed edges: " + this.edgeSet().size());
@@ -914,7 +915,8 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 			System.out.println(n + ": " + attr.get(n));
 		}
 		for (edge e : this.edgeSet()) {
-			System.out.println(e.getSource() + " " + e.getTarget());
+			System.out.println(this.getEdgeSource(e) + " "
+					+ this.getEdgeTarget(e));
 		}
 	}
 
@@ -1056,7 +1058,7 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 			flag = true;
 			max = 0;
 			for (edge e : DAGP.outgoingEdgesOf(current)) {
-				String n = (String) e.getTarget();
+				String n = (String) this.getEdgeTarget(e);
 				if (!visited.keySet().contains(n)) {
 					s.add(n);
 					flag = false;
@@ -1105,7 +1107,7 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 		while (!Queue.isEmpty()) {
 			String node = Queue.poll();
 			for (edge e : this.outgoingEdgesOf(node)) {
-				String tv = (String) e.getTarget();
+				String tv = (String) this.getEdgeTarget(e);
 				if (!visited.contains(tv)) {
 					Queue.add(tv);
 					visited.add(tv);
@@ -1118,7 +1120,7 @@ public class cg_graph extends DefaultDirectedWeightedGraph<String, edge>
 		while (!Queue.isEmpty()) {
 			String node = Queue.poll();
 			for (edge e : this.incomingEdgesOf(node)) {
-				String fv = (String) e.getSource();
+				String fv = (String) this.getEdgeSource(e);
 				if (!visited.contains(fv)) {
 					Queue.add(fv);
 					visited.add(fv);

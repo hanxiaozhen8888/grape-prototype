@@ -26,24 +26,24 @@ public class edge extends DefaultEdge implements Serializable {
 //		}
 //	}
 
-	public int hashCode() {
-		int result;
-		result = (this.getSource().toString() == null ? 0 : this.getSource()
-				.toString().hashCode());
-		result = 37
-				* result
-				+ (this.getTarget().toString() == null ? 0 : this.getTarget()
-						.toString().hashCode());
-		return result;
-	}
+//	public int hashCode() {
+//		int result;
+//		result = (this.getSource().toString() == null ? 0 : this.getSource()
+//				.toString().hashCode());
+//		result = 37
+//				* result
+//				+ (this.getTarget().toString() == null ? 0 : this.getTarget()
+//						.toString().hashCode());
+//		return result;
+//	}
 
-	public String getSource() {
-		String source = this.getSource();
-		return source;
-	}
-
-	public String getTarget() {
-		String target = this.getTarget();
-		return target;
-	}
+//	public String getSource() {
+//		String source = this.getSource();
+//		return source;
+//	}
+//
+//	public String getTarget() {
+//		String target = this.getTarget();
+//		return target;
+//	}
 }
