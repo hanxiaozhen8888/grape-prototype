@@ -80,7 +80,7 @@ public class Partitioner {
 	private List<Partition> simplePartition() throws IOException {
 
 		/** approximately compute the size of each partition */
-		int sizeOfPartition = GRAPH_VERTEX_COUNT / PARTITION_COUNT;
+		int sizeOfPartition = GRAPH_VERTEX_COUNT / PARTITION_COUNT + 1;
 
 		log.debug("graph_vertex count = " + GRAPH_VERTEX_COUNT);
 		log.debug("size of partition = " + sizeOfPartition);
@@ -117,12 +117,18 @@ public class Partitioner {
 
 			while (!toPartitionedVertices.isEmpty()) {
 				String v = toPartitionedVertices.poll();
-				if (unPartitionedVertices.contains(v)) {
-					unPartitionedVertices.remove(v);
-					int pId = i++ / sizeOfPartition;
-					partitions.get(pId).addVertex(v);
-					verticesInPartition.put(v, pId);
-					toPartitionedVertices.addAll(Graphs.neighborListOf(g, v));
+				try {
+					if (unPartitionedVertices.contains(v)) {
+						unPartitionedVertices.remove(v);
+						int pId = i++ / sizeOfPartition;
+						partitions.get(pId).addVertex(v);
+						verticesInPartition.put(v, pId);
+						toPartitionedVertices.addAll(Graphs
+								.neighborListOf(g, v));
+					}
+				} catch (Exception e) {
+					log.error(e.getStackTrace());
+					log.error(i + "-" + sizeOfPartition);
 				}
 			}
 		}
@@ -151,8 +157,8 @@ public class Partitioner {
 		/*
 		 * FIXME:
 		 * 
-		 * 1.only 37% are inner edges 2.incoming and outgoing map need adjust.
-		 * or will lose info.
+		 * 1.only 37% are inner edges in amazon data set and 53% in YouTube data
+		 * set. 2.incoming and outgoing map need adjust. or will lose info.
 		 * 
 		 * edges=8112707 innerEdge=3031417 ratio=0.3736628230256559
 		 */
