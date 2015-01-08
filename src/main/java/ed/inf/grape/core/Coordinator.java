@@ -6,11 +6,12 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
+import ed.inf.grape.graph.Partition;
 
 /**
  * The Class Master.
@@ -65,6 +67,9 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	/** The start time. */
 	long startTime;
+
+	/** Partition manager. */
+	private Partitioner partitioner;
 
 	// /** The last checkpointed superstep. */
 	// private long lastCheckpointedSuperstep = 0;
@@ -562,10 +567,10 @@ public class Coordinator extends UnicastRemoteObject implements
 		log.info("receive task with graph file = " + graphFilename);
 
 		startTime = System.currentTimeMillis();
+
+		partitioner = new Partitioner();
 		assignPartitions();
-		// TODO partition the graph.
-		// TODO assign the partitions to available workers. (through Proxys),
-		// send partition info to all workers
+
 		// TODO init health manager
 
 		// test only
@@ -574,38 +579,61 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	public void assignPartitions() {
 
-		Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
-				.entrySet().iterator();
-		while (workerMapIter.hasNext()) {
-			activeWorkerSet.add(workerMapIter.next().getValue().getWorkerID());
+		int totalPartitions = partitioner.getNumOfPartitions();
+
+		Iterator<Partition> iter = partitioner.getPartitions().iterator();
+
+		Partition partition = null;
+		partitionWorkerMap = new HashMap<Integer, String>();
+
+		// Assign partitions to workers in the ratio of the number of worker
+		// threads that each worker has.
+		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
+
+			WorkerProxy workerProxy = entry.getValue();
+
+			// Compute the number of partitions to assign
+			int numThreads = workerProxy.getNumThreads();
+			double ratio = ((double) (numThreads)) / totalWorkerThreads.get();
+			log.info("Worker " + workerProxy.getWorkerID());
+			log.info("ThreadNum = " + numThreads + ", Ratio: " + ratio);
+			int numPartitionsToAssign = (int) (ratio * totalPartitions);
+			log.info("numPartitionsToAssign: " + numPartitionsToAssign);
+
+			List<Partition> workerPartitions = new ArrayList<Partition>();
+			for (int i = 0; i < numPartitionsToAssign; i++) {
+				partition = iter.next();
+
+				activeWorkerSet.add(entry.getKey());
+				log.info("Adding partition  " + partition.getPartitionID()
+						+ " to worker " + workerProxy.getWorkerID());
+				workerPartitions.add(partition);
+				partitionWorkerMap.put(partition.getPartitionID(),
+						workerProxy.getWorkerID());
+			}
+			workerProxy.addPartitionList(workerPartitions);
 		}
 
-		// Iterator<Map.Entry<String, WorkerProxy>> workerMapIter =
-		// workerProxyMap
-		// .entrySet().iterator();
-		// while (iter.hasNext()) {
-		// // If the remaining partitions is greater than the number of the
-		// // workers, start iterating from the beginning again.
-		// if (!workerMapIter.hasNext()) {
-		// workerMapIter = workerProxyMap.entrySet().iterator();
-		// }
-		// partition = iter.next();
-		//
-		// WorkerProxy workerProxy = workerMapIter.next().getValue();
-		// // Get the partition that has the sourceVertex, and add the worker
-		// // that has the partition to the worker set from which
-		// // acknowledgments will be received.
-		// if (partition.getPartitionID() == sourceVertex_partitionID) {
-		// activeWorkerSet.add(workerProxy.getWorkerID());
-		// }
-		// System.out.println("Adding partition  "
-		// + partition.getPartitionID() + " to worker "
-		// + workerProxy.getWorkerID());
-		// workerProxy.addPartition(partition);
-		// partitionWorkerMap.put(partition.getPartitionID(),
-		// workerProxy.getWorkerID());
-		// }
-		//
+		// Add the remaining partitions (if any) in a round-robin fashion.
+		Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
+				.entrySet().iterator();
+		while (iter.hasNext()) {
+			// If the remaining partitions is greater than the number of the
+			// workers, start iterating from the beginning again.
+			if (!workerMapIter.hasNext()) {
+				workerMapIter = workerProxyMap.entrySet().iterator();
+			}
+			partition = iter.next();
+
+			WorkerProxy workerProxy = workerMapIter.next().getValue();
+
+			activeWorkerSet.add(workerProxy.getWorkerID());
+			log.info("Adding partition  " + partition.getPartitionID()
+					+ " to worker " + workerProxy.getWorkerID());
+			partitionWorkerMap.put(partition.getPartitionID(),
+					workerProxy.getWorkerID());
+			workerProxy.addPartition(partition);
+		}
 
 	}
 

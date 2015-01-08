@@ -8,6 +8,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -46,11 +47,14 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 */
 	private boolean stopSendingMessage;
 
-	/** The queue of partitions in the current superstep. */
-	private BlockingQueue<Partition> currentPartitionQueue;
+	// /** The queue of partitions in the current superstep. */
+	// private BlockingQueue<Partition> currentPartitionQueue;
 
 	/** The queue of partitions in the next superstep. */
-	private BlockingQueue<Partition> nextPartitionQueue;
+	// private BlockingQueue<Partition> partitionQueue;
+
+	/** hosting partitions */
+	private Map<Integer, Partition> partitions;
 
 	/** Hostname of the node with timestamp information. */
 	private String workerID;
@@ -123,8 +127,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		}
 
 		this.workerID = hostName + "_" + timestamp;
-		this.currentPartitionQueue = new LinkedBlockingDeque<Partition>();
-		this.nextPartitionQueue = new LinkedBlockingQueue<Partition>();
+		// this.currentPartitionQueue = new LinkedBlockingDeque<Partition>();
+		// this.partitionQueue = new LinkedBlockingQueue<Partition>();
+		this.partitions = new HashMap<Integer, Partition>();
 		this.currentIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.previousIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.outgoingMessages = new ConcurrentHashMap<String, List<Message>>();
@@ -148,7 +153,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 *             the remote exception
 	 */
 	public void addPartition(Partition partition) throws RemoteException {
-		this.nextPartitionQueue.add(partition);
+		log.info("receive partition:" + partition.getPartitionInfo());
+		this.partitions.put(partition.getPartitionID(), partition);
 	}
 
 	/**
@@ -161,7 +167,10 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 */
 	public void addPartitionList(List<Partition> workerPartitions)
 			throws RemoteException {
-		this.nextPartitionQueue.addAll(workerPartitions);
+		for (Partition p : workerPartitions) {
+			log.info("receive partition:" + p.getPartitionInfo());
+			this.partitions.put(p.getPartitionID(), p);
+		}
 	}
 
 	/**
@@ -263,11 +272,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * Restore the worker to the initial state
 	 */
 	private void restoreInitialState() {
-		this.nextPartitionQueue.clear();
+		// this.partitionQueue.clear();
 		this.currentIncomingMessages.clear();
 		this.outgoingMessages.clear();
 		this.mapPartitionIdToWorkerId.clear();
-		this.currentPartitionQueue.clear();
+		// this.currentPartitionQueue.clear();
 		this.previousIncomingMessages.clear();
 		this.stopSendingMessage = false;
 		this.startSuperStep = false;
@@ -673,6 +682,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	public void startWork() throws RemoteException {
 		// TODO Auto-generated method stub
 		log.info("Worker receive the flag from coordinator, begin to work.");
+		log.debug("hosting" + this.partitions.size() + "partitions");
 		this.startSuperStep = true;
 	}
 }

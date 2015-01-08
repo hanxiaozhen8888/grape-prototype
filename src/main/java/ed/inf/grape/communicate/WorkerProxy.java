@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ed.inf.grape.core.Coordinator;
 import ed.inf.grape.core.Message;
 import ed.inf.grape.core.Worker;
@@ -43,6 +46,8 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 
 	/** The total partitions. */
 	private int totalPartitions = 0;
+
+	static Logger log = LogManager.getLogger(WorkerProxy.class);
 
 	/**
 	 * Instantiates a new worker proxy.
@@ -85,22 +90,19 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		while (true) {
 			try {
 				partition = partitionList.take();
-				System.out.println("Partition taken");
+				log.info("Partition taken");
 				worker.addPartition(partition);
 			} catch (RemoteException e) {
-				System.out.println("Remote Exception received from the Worker "
+				log.fatal("Remote Exception received from the Worker "
 						+ workerID);
-				// System.out.println("Giving back the partition to the Master ");
-				System.out
-						.println("RemoteException: Removing Worker from Master");
+
+				log.info("RemoteException: Removing Worker from Master");
 				coordinator.removeWorker(workerID);
-				// return;
 			} catch (InterruptedException e) {
-				System.out.println("Thread interrupted");
-				System.out
-						.println("InterruptedException: Removing Worker from Master");
+				log.fatal("Thread interrupted");
+
+				log.info("InterruptedException: Removing Worker from Master");
 				coordinator.removeWorker(workerID);
-				// e.printStackTrace();
 			}
 		}
 	}
@@ -160,11 +162,14 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 			totalPartitions += workerPartitions.size();
 			worker.addPartitionList(workerPartitions);
 		} catch (RemoteException e) {
+			log.info("Remote Exception received from the Worker.");
+			log.info("Giving back the partition to the Master.");
+
 			e.printStackTrace();
-			System.out.println("Remote Exception received from the Worker");
-			System.out.println("Giving back the partition to the Master ");
-			coordinator.removeWorker(workerID);
+
+			log.fatal(e.getStackTrace());
 			// give the partition back to Master
+			coordinator.removeWorker(workerID);
 			return;
 		}
 	}

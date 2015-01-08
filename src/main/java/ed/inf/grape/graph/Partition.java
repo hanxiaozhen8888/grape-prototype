@@ -1,5 +1,6 @@
 package ed.inf.grape.graph;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 /**
@@ -10,25 +11,27 @@ import java.util.HashMap;
  *
  */
 
-public class Partition {
+public class Partition implements Serializable {
 
-	private int partitionId;
+	private static final long serialVersionUID = -4757004627010733180L;
+
+	private int partitionID;
 	private cg_graph fragment;
 	/* store pair of vertex -> source-vertex-partitionId */
 	private HashMap<String, Integer> incomingVertices;
 	/* store pair of vertex -> target-vertex-partitionId */
 	private HashMap<String, Integer> outgoingVertices;
 
-	public Partition(int partitionId) {
+	public Partition(int partitionID) {
 		super();
-		this.partitionId = partitionId;
+		this.partitionID = partitionID;
 		this.fragment = new cg_graph();
 		this.incomingVertices = new HashMap<String, Integer>();
 		this.outgoingVertices = new HashMap<String, Integer>();
 	}
 
-	public int getPartitionId() {
-		return partitionId;
+	public int getPartitionID() {
+		return partitionID;
 	}
 
 	public cg_graph getFragment() {
@@ -56,7 +59,7 @@ public class Partition {
 	}
 
 	public String getPartitionInfo() {
-		return "pID = " + this.partitionId + " | vertices = "
+		return "pID = " + this.partitionID + " | vertices = "
 				+ fragment.vertexSet().size() + " | edges = "
 				+ fragment.edgeSet().size() + " | iv = "
 				+ incomingVertices.size() + " | ov = "

@@ -26,6 +26,9 @@ import ed.inf.grape.util.Strings;
  * Partitioner, divide a whole graph into several partitions with predefined
  * strategy.
  * 
+ * TODO: make it interface, implements by different strategy, invoke by
+ * reflection.
+ * 
  * @author yecol
  *
  */
@@ -45,6 +48,8 @@ public class Partitioner {
 
 	/** Partition id */
 	private static int currentPartitionId;
+
+	private List<Partition> partitions;
 
 	static Logger log = LogManager.getLogger(Coordinator.class);
 
@@ -70,11 +75,26 @@ public class Partitioner {
 		PARTITION_STRATEGY = Strings.PARTITION_STRATEGY_DEFAULT;
 	}
 
-	public List<Partition> partitionGraph() throws IOException {
-		if (PARTITION_STRATEGY == Strings.PARTITION_STRATEGY_DEFAULT) {
-			return this.simplePartition();
+	public int getNumOfPartitions() {
+		return Partitioner.PARTITION_COUNT;
+	}
+
+	public List<Partition> getPartitions() {
+		if (this.partitions == null) {
+			try {
+				this.partitionGraph();
+			} catch (IOException e) {
+				log.error("partition failed.");
+				log.error(e.getStackTrace());
+			}
 		}
-		return null;
+		return this.partitions;
+	}
+
+	private void partitionGraph() throws IOException {
+		if (PARTITION_STRATEGY == Strings.PARTITION_STRATEGY_DEFAULT) {
+			this.partitions = this.simplePartition();
+		}
 	}
 
 	private List<Partition> simplePartition() throws IOException {
