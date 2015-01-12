@@ -1,7 +1,7 @@
 package ed.inf.grape.graph;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Data structure of partition, including a graph fragment and vertices with
@@ -17,17 +17,15 @@ public class Partition implements Serializable {
 
 	private int partitionID;
 	private cg_graph fragment;
-	/* store pair of vertex -> source-vertex-partitionId */
-	private HashMap<String, Integer> incomingVertices;
-	/* store pair of vertex -> target-vertex-partitionId */
-	private HashMap<String, Integer> outgoingVertices;
+	private HashSet<String> incomingVertices;
+	private HashSet<String> outgoingVertices;
 
 	public Partition(int partitionID) {
 		super();
 		this.partitionID = partitionID;
 		this.fragment = new cg_graph();
-		this.incomingVertices = new HashMap<String, Integer>();
-		this.outgoingVertices = new HashMap<String, Integer>();
+		this.incomingVertices = new HashSet<String>();
+		this.outgoingVertices = new HashSet<String>();
 	}
 
 	public int getPartitionID() {
@@ -43,19 +41,32 @@ public class Partition implements Serializable {
 	}
 
 	public edge addEdge(String sourceVertex, String targetVertex) {
+
+		if (!fragment.containsVertex(sourceVertex)) {
+			fragment.addVertex(sourceVertex);
+		}
+
+		if (!fragment.containsVertex(targetVertex)) {
+			fragment.addVertex(targetVertex);
+		}
+
 		return fragment.addEdge(sourceVertex, targetVertex);
 	}
 
-	// public boolean addIncommingEdge(String vertex) {
-	// return fragment.addVertex(vertex);
-	// }
-
-	public HashMap<String, Integer> getIncomingVertices() {
+	public HashSet<String> getIncomingVertices() {
 		return incomingVertices;
 	}
 
-	public HashMap<String, Integer> getOutgoingVertices() {
+	public HashSet<String> getOutgoingVertices() {
 		return outgoingVertices;
+	}
+
+	public void addOutgoingVertex(String vertex) {
+		this.outgoingVertices.add(vertex);
+	}
+
+	public void addIncomingVertex(String vertex) {
+		this.incomingVertices.add(vertex);
 	}
 
 	public String getPartitionInfo() {

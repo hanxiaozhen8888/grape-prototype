@@ -313,6 +313,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	 * @throws Exception
 	 *             the exception
 	 */
+	@SuppressWarnings({ "deprecation", "static-access" })
 	public static void main(String[] args) throws Exception {
 		System.setSecurityManager(new RMISecurityManager());
 		Coordinator coordinator;
@@ -568,7 +569,7 @@ public class Coordinator extends UnicastRemoteObject implements
 
 		startTime = System.currentTimeMillis();
 
-		partitioner = new Partitioner();
+		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
 		assignPartitions();
 
 		// TODO init health manager
@@ -639,15 +640,12 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	public void localComputeCompleted(String workerID, Message message)
 			throws RemoteException {
-		// TODO Auto-generated method stub
-
 		log.info("Coordinator received info worker " + workerID + " saying: "
 				+ message);
 
 	}
 
 	public void startWork() throws RemoteException {
-		// TODO Auto-generated method stub
 		log.info("Master: Starting Superstep ");
 		// System.out.println("Active worker set: " + this.activeWorkerSet);
 		this.workerAcknowledgementSet.clear();
@@ -663,7 +661,6 @@ public class Coordinator extends UnicastRemoteObject implements
 			}
 		}
 		this.activeWorkerSet.clear();
-
 	}
 
 }

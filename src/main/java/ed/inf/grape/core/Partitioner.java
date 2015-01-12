@@ -34,8 +34,11 @@ import ed.inf.grape.util.Strings;
  */
 public class Partitioner {
 
+	public static int STRATEGY_SIMPLE = 0;
+	public static int STRATEGY_METIS = 1;
+
 	/** Partition strategy */
-	private static String PARTITION_STRATEGY;
+	private int strategy;
 
 	/** Partition count */
 	private static int PARTITION_COUNT;
@@ -43,8 +46,6 @@ public class Partitioner {
 	private static String GRAPH_FILE_PATH;
 
 	private static int GRAPH_VERTEX_COUNT;
-
-	private static int GRAPH_EDGE_COUNT;
 
 	/** Partition id */
 	private static int currentPartitionId;
@@ -64,15 +65,13 @@ public class Partitioner {
 					"GRAPH_FILE_PATH");
 			GRAPH_VERTEX_COUNT = Config.getInstance().getIntProperty(
 					"GRAPH_VERTEX_COUNT");
-			GRAPH_EDGE_COUNT = Config.getInstance().getIntProperty(
-					"GRAPH_EDGE_COUNT");
 		} catch (Exception e) {
-			log.error(e.getStackTrace());
+			e.printStackTrace();
 		}
 	}
 
-	public Partitioner() {
-		PARTITION_STRATEGY = Strings.PARTITION_STRATEGY_DEFAULT;
+	public Partitioner(int strategy) {
+		this.strategy = strategy;
 	}
 
 	public int getNumOfPartitions() {
@@ -92,8 +91,10 @@ public class Partitioner {
 	}
 
 	private void partitionGraph() throws IOException {
-		if (PARTITION_STRATEGY == Strings.PARTITION_STRATEGY_DEFAULT) {
+		if (this.strategy == STRATEGY_SIMPLE) {
 			this.partitions = this.simplePartition();
+		} else if (this.strategy == STRATEGY_METIS) {
+			this.partitions = this.metisPartition();
 		}
 	}
 
@@ -161,16 +162,14 @@ public class Partitioner {
 		for (edge e : g.edgeSet()) {
 			String vsource = g.getEdgeSource(e);
 			String vtarget = g.getEdgeTarget(e);
-			int pIdOfSource = verticesInPartition.get(vsource);
-			int pIdOfTarget = verticesInPartition.get(vtarget);
-			if (pIdOfSource == pIdOfTarget) {
+			int pIDOfSource = verticesInPartition.get(vsource);
+			int pIDOfTarget = verticesInPartition.get(vtarget);
+			if (pIDOfSource == pIDOfTarget) {
 				innerEdge++;
-				partitions.get(pIdOfSource).addEdge(vsource, vtarget);
+				partitions.get(pIDOfSource).addEdge(vsource, vtarget);
 			} else {
-				partitions.get(pIdOfSource).getOutgoingVertices()
-						.put(vtarget, pIdOfTarget);
-				partitions.get(pIdOfTarget).getIncomingVertices()
-						.put(vsource, pIdOfSource);
+				partitions.get(pIDOfSource).addOutgoingVertex(vtarget);
+				partitions.get(pIDOfTarget).addIncomingVertex(vsource);
 			}
 		}
 
@@ -196,13 +195,37 @@ public class Partitioner {
 		return partitions;
 	}
 
+	private List<Partition> metisPartition() throws IOException {
+
+		/** run program target/gpartition */
+
+		/** TODO: avoid hold all partitions for big graph */
+		List<Partition> partitions = new ArrayList<Partition>();
+
+		for (int i = 0; i < PARTITION_COUNT; i++) {
+
+			String partitionFilename = GRAPH_FILE_PATH + ".p"
+					+ String.valueOf(i);
+			Partition p = IO.loadPartitions(i, partitionFilename);
+			partitions.add(p);
+		}
+
+		log.debug("edges partition finished.");
+
+		for (Partition p : partitions) {
+			log.info(p.getPartitionInfo());
+		}
+
+		return partitions;
+	}
+
 	public static void main(String[] args) {
 
-		Partitioner partitioner = new Partitioner();
+		Partitioner partitioner = new Partitioner(STRATEGY_METIS);
 		try {
 			partitioner.partitionGraph();
 		} catch (IOException e) {
-			log.error(e.getStackTrace());
+			e.printStackTrace();
 		}
 
 	}

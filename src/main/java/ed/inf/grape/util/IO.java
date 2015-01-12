@@ -2,12 +2,16 @@ package ed.inf.grape.util;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ed.inf.grape.graph.Partition;
 import ed.inf.grape.graph.cg_graph;
+import ed.inf.grape.graph.edge;
 
 public class IO {
 
@@ -55,4 +59,108 @@ public class IO {
 		return graph;
 	}
 
+	static public Partition loadPartitions(final int partitionID,
+			final String partitionFilename) throws IOException {
+
+		/**
+		 * Load partition from file. (maybe partitioned by Metis, etc.). Each
+		 * partition consists two files: 1. partitionName.v: vertexID
+		 * vertexLabel 2. partitionName.e: edgeType-edgeSource-edgeTarget
+		 * */
+
+		log.info("loading partition " + partitionFilename
+				+ " with stream scanner.");
+
+		long startTime = System.currentTimeMillis();
+
+		FileInputStream fileInputStream = null;
+		Scanner sc = null;
+
+		Partition partition = new Partition(partitionID);
+
+		/** load vertices */
+		fileInputStream = new FileInputStream(partitionFilename + ".v");
+		sc = new Scanner(fileInputStream, "UTF-8");
+		while (sc.hasNextLine()) {
+			String line = sc.nextLine();
+			String[] nodes = line.split("\t");
+			String vsource = nodes[0];
+			String label = nodes[1];
+
+			partition.addVertex(vsource);
+			// TODO: add labels
+			// notice: virtual nodes may not have label
+		}
+
+		if (fileInputStream != null) {
+			fileInputStream.close();
+		}
+		if (sc != null) {
+			sc.close();
+		}
+
+		/** load edges */
+		fileInputStream = new FileInputStream(partitionFilename + ".e");
+		sc = new Scanner(fileInputStream, "UTF-8");
+		while (sc.hasNextLine()) {
+			String[] line = sc.nextLine().split("-");
+
+			partition.addEdge(line[1], line[2]);
+
+			if (line[0].equals(edge.TYPE_INCOMING)) {
+				partition.addIncomingVertex(line[1]);
+			}
+
+			else if (line[0].equals(edge.TYPE_OUTGOING)) {
+				partition.addOutgoingVertex(line[2]);
+			}
+		}
+
+		if (fileInputStream != null) {
+			fileInputStream.close();
+		}
+		if (sc != null) {
+			sc.close();
+		}
+
+		log.info("graph partition loaded." + partition.getPartitionInfo()
+				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
+
+		return partition;
+	}
+
+	static public Map<Integer, Integer> loadInt2IntMapFromFile(String filename)
+			throws IOException {
+
+		HashMap<Integer, Integer> retMap = new HashMap<Integer, Integer>();
+
+		log.info("loading map " + filename + " with stream scanner.");
+
+		long startTime = System.currentTimeMillis();
+
+		FileInputStream fileInputStream = null;
+		Scanner sc = null;
+
+		fileInputStream = new FileInputStream(filename);
+		sc = new Scanner(fileInputStream, "UTF-8");
+		while (sc.hasNextLine()) {
+
+			int key = sc.nextInt();
+			int value = sc.nextInt();
+			retMap.put(key, value);
+
+		}
+
+		if (fileInputStream != null) {
+			fileInputStream.close();
+		}
+		if (sc != null) {
+			sc.close();
+		}
+
+		log.info(filename + " loaded to map. with size =  " + retMap.size()
+				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
+
+		return retMap;
+	}
 }

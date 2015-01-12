@@ -42,6 +42,7 @@
 									<directory>src/main/resources</directory>
 									<includes>
 										<include>*.policy</include>
+										<include>*.dat</include>
 									</includes>
 								</resource>
 								<resource>
