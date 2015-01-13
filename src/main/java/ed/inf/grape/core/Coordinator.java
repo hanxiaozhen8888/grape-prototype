@@ -27,12 +27,11 @@ import ed.inf.grape.communicate.WorkerProxy;
 import ed.inf.grape.graph.Partition;
 
 /**
- * The Class Master.
+ * The Class Coordinator.
  * 
- * @author Prakash Chandrasekaran
- * @author Gautham Narayanasamy
- * @author Vijayaraghavan Subbaiah
+ * @author yecol
  */
+@SuppressWarnings("deprecation")
 public class Coordinator extends UnicastRemoteObject implements
 		Worker2Coordinator, Client2Coordinator {
 
@@ -59,6 +58,9 @@ public class Coordinator extends UnicastRemoteObject implements
 	/** The partitionID to workerID map. **/
 	private Map<Integer, String> partitionWorkerMap;
 
+	/** The virtual vertexID to partitionID map. */
+	private Map<String, Integer> virtualVertexPartitionMap;
+
 	/** Set of Workers maintained for acknowledgement. */
 	private Set<String> workerAcknowledgementSet = new HashSet<String>();
 
@@ -71,30 +73,12 @@ public class Coordinator extends UnicastRemoteObject implements
 	/** Partition manager. */
 	private Partitioner partitioner;
 
-	// /** The last checkpointed superstep. */
-	// private long lastCheckpointedSuperstep = 0;
-
-	// /** The CHECKPOINTIN g_ directory. */
-	// private static String CHECKPOINTING_DIRECTORY;
-
 	/** The result queue. */
 	private BlockingQueue<String> resultQueue = new LinkedBlockingDeque<String>();
 
 	static Logger log = LogManager.getLogger(Coordinator.class);
 
 	static {
-
-		// get configuration
-
-		/*
-		 * try { CHECKPOINT_FREQUENCY = Props.getInstance().getIntProperty(
-		 * "CHECKPOINT_FREQUENCY"); CHECKPOINTING_DIRECTORY =
-		 * Props.getInstance().getStringProperty( "CHECKPOINT_DIR"); } catch
-		 * (PropertyNotFoundException e) {
-		 *//** set to default frequency value **/
-		/*
-		 * CHECKPOINT_FREQUENCY = 5; e.printStackTrace(); }
-		 */
 	}
 
 	/**
@@ -165,33 +149,6 @@ public class Coordinator extends UnicastRemoteObject implements
 	}
 
 	/**
-	 * Sets the checkpoint superstep.
-	 */
-	// public void resetCheckpointSuperstep() {
-	// this.superstep = this.lastCheckpointedSuperstep;
-	// }
-
-	/**
-	 * Gets the last checkpointed superstep.
-	 * 
-	 * @return the last checkpointed superstep
-	 */
-	// public long getLastCheckpointedSuperstep() {
-	// return lastCheckpointedSuperstep;
-	// }
-
-	/**
-	 * Sets the last checkpointed superstep.
-	 * 
-	 * @param lastCheckpointedSuperstep
-	 *            the new last checkpointed superstep
-	 */
-	// public void setLastCheckpointedSuperstep(long lastCheckpointedSuperstep)
-	// {
-	// this.lastCheckpointedSuperstep = lastCheckpointedSuperstep;
-	// }
-
-	/**
 	 * Send worker partition info.
 	 * 
 	 * @throws RemoteException
@@ -201,7 +158,8 @@ public class Coordinator extends UnicastRemoteObject implements
 		log.debug("Coordinator: sendWorkerPartitionInfo");
 		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
 			WorkerProxy workerProxy = entry.getValue();
-			workerProxy.setWorkerPartitionInfo(partitionWorkerMap, workerMap);
+			workerProxy.setWorkerPartitionInfo(virtualVertexPartitionMap,
+					partitionWorkerMap, workerMap);
 		}
 	}
 
@@ -313,7 +271,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	 * @throws Exception
 	 *             the exception
 	 */
-	@SuppressWarnings({ "deprecation", "static-access" })
+	@SuppressWarnings({ "static-access" })
 	public static void main(String[] args) throws Exception {
 		System.setSecurityManager(new RMISecurityManager());
 		Coordinator coordinator;
@@ -569,8 +527,8 @@ public class Coordinator extends UnicastRemoteObject implements
 
 		startTime = System.currentTimeMillis();
 
-		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
 		assignPartitions();
+		sendWorkerPartitionInfo();
 
 		// TODO init health manager
 
@@ -579,6 +537,8 @@ public class Coordinator extends UnicastRemoteObject implements
 	}
 
 	public void assignPartitions() {
+
+		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
 
 		int totalPartitions = partitioner.getNumOfPartitions();
 
@@ -635,6 +595,10 @@ public class Coordinator extends UnicastRemoteObject implements
 					workerProxy.getWorkerID());
 			workerProxy.addPartition(partition);
 		}
+
+		// get virtual vertex to partition map
+		this.virtualVertexPartitionMap = partitioner
+				.getVirtualVertex2PartitionMap();
 
 	}
 

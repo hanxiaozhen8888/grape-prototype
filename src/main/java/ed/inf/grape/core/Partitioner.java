@@ -197,7 +197,7 @@ public class Partitioner {
 
 	private List<Partition> metisPartition() throws IOException {
 
-		/** run program target/gpartition */
+		/** run program target gpartition */
 
 		/** TODO: avoid hold all partitions for big graph */
 		List<Partition> partitions = new ArrayList<Partition>();
@@ -217,6 +217,17 @@ public class Partitioner {
 		}
 
 		return partitions;
+	}
+
+	public Map<String, Integer> getVirtualVertex2PartitionMap() {
+
+		try {
+			return IO.loadString2IntMapFromFile(GRAPH_FILE_PATH + ".vvp");
+		} catch (IOException e) {
+			log.error("load virtual vertex 2 partition map failed.");
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public static void main(String[] args) {

@@ -99,10 +99,18 @@ public class IO {
 			sc.close();
 		}
 
+		log.debug("load vertex finished.");
+
 		/** load edges */
 		fileInputStream = new FileInputStream(partitionFilename + ".e");
 		sc = new Scanner(fileInputStream, "UTF-8");
+		int lc = 0;
 		while (sc.hasNextLine()) {
+
+			if (lc % 100000 == 0) {
+				log.debug("load line " + lc);
+			}
+
 			String[] line = sc.nextLine().split("-");
 
 			partition.addEdge(line[1], line[2]);
@@ -114,6 +122,7 @@ public class IO {
 			else if (line[0].equals(edge.TYPE_OUTGOING)) {
 				partition.addOutgoingVertex(line[2]);
 			}
+			lc++;
 		}
 
 		if (fileInputStream != null) {
@@ -149,6 +158,40 @@ public class IO {
 			int value = sc.nextInt();
 			retMap.put(key, value);
 
+		}
+
+		if (fileInputStream != null) {
+			fileInputStream.close();
+		}
+		if (sc != null) {
+			sc.close();
+		}
+
+		log.info(filename + " loaded to map. with size =  " + retMap.size()
+				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
+
+		return retMap;
+	}
+
+	static public Map<String, Integer> loadString2IntMapFromFile(String filename)
+			throws IOException {
+
+		HashMap<String, Integer> retMap = new HashMap<String, Integer>();
+
+		log.info("loading map " + filename + " with stream scanner.");
+
+		long startTime = System.currentTimeMillis();
+
+		FileInputStream fileInputStream = null;
+		Scanner sc = null;
+
+		fileInputStream = new FileInputStream(filename);
+		sc = new Scanner(fileInputStream, "UTF-8");
+		while (sc.hasNextLine()) {
+
+			String key = sc.next();
+			int value = sc.nextInt();
+			retMap.put(key, value);
 		}
 
 		if (fileInputStream != null) {

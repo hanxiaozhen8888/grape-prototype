@@ -62,6 +62,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** Master Proxy object to interact with Master. */
 	private Worker2Coordinator coordinatorProxy;
 
+	/** VertexID 2 PartitionID Map */
+	private Map<String, Integer> mapVertexIdToPartitionId;
+
 	/** PartitionID to WorkerID Map. */
 	private Map<Integer, String> mapPartitionIdToWorkerId;
 
@@ -89,7 +92,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** Limitation of threads on each worker */
 	private static int MAX_THREAD_LIMITATION = 0;
 
-	static Logger log = LogManager.getLogger(Coordinator.class);
+	static Logger log = LogManager.getLogger(WorkerImpl.class);
 
 	static {
 
@@ -347,12 +350,15 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 *             the remote exception
 	 */
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
+			Map<String, Integer> mapVertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId,
 			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException {
 		log.info("WorkerImpl: setWorkerPartitionInfo");
 		log.info("totalPartitionsAssigned " + totalPartitionsAssigned
 				+ " mapPartitionIdToWorkerId: " + mapPartitionIdToWorkerId);
+		log.info("vertex2partitionMapSize: " + mapVertexIdToPartitionId.size());
 		this.totalPartitionsAssigned = totalPartitionsAssigned;
+		this.mapVertexIdToPartitionId = mapVertexIdToPartitionId;
 		this.mapPartitionIdToWorkerId = mapPartitionIdToWorkerId;
 		this.worker2WorkerProxy = new Worker2WorkerProxy(mapWorkerIdToWorker);
 	}
@@ -392,7 +398,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 		} catch (Exception e) {
 			log.error("ComputeEngine exception:");
-			log.error(e.getStackTrace());
+			e.printStackTrace();
 		}
 	}
 
@@ -685,4 +691,5 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		log.debug("hosting" + this.partitions.size() + "partitions");
 		this.startSuperStep = true;
 	}
+
 }

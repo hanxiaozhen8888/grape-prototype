@@ -23,13 +23,14 @@ public interface Worker extends Remote {
 			throws RemoteException;
 
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
+			Map<String, Integer> mapVertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId,
 			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException;
 
 	public void halt() throws RemoteException;
 
 	public void receiveMessage(Message incomingMessages) throws RemoteException;
-	
+
 	public void startWork() throws RemoteException;
 
 	// for pregel model
