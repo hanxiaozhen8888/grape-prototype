@@ -1,5 +1,6 @@
 package ed.inf.grape.core;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
@@ -23,6 +24,7 @@ import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
 import ed.inf.grape.util.Config;
+import ed.inf.grape.util.IO;
 
 /**
  * Represents the computation node.
@@ -92,6 +94,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** Limitation of threads on each worker */
 	private static int MAX_THREAD_LIMITATION = 0;
 
+	private static String GRAPH_FILE_PATH = null;
+	private static int PARTITION_COUNT = 0;
+
 	static Logger log = LogManager.getLogger(WorkerImpl.class);
 
 	static {
@@ -99,6 +104,10 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		try {
 			MAX_THREAD_LIMITATION = Config.getInstance().getIntProperty(
 					"THREAD_LIMIT_ON_EACH_MACHINE");
+			GRAPH_FILE_PATH = Config.getInstance().getStringProperty(
+					"GRAPH_FILE_PATH");
+			PARTITION_COUNT = Config.getInstance().getIntProperty(
+					"PARTITION_COUNT");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -174,6 +183,43 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			log.info("receive partition:" + p.getPartitionInfo());
 			this.partitions.put(p.getPartitionID(), p);
 		}
+	}
+
+	@Override
+	public void addPartitionIDList(List<Integer> workerPartitionIDs)
+			throws RemoteException {
+
+		for (int partitionID : workerPartitionIDs) {
+
+			String filename = GRAPH_FILE_PATH + ".p"
+					+ String.valueOf(partitionID);
+
+			Partition partition;
+			try {
+				partition = IO.loadPartitions(partitionID, filename);
+				this.partitions.put(partitionID, partition);
+			} catch (IOException e) {
+				log.error("load partition file failed.");
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	@Override
+	public void addPartitionID(int partitionID) throws RemoteException {
+
+		String filename = GRAPH_FILE_PATH + ".p" + String.valueOf(partitionID);
+
+		Partition partition;
+		try {
+			partition = IO.loadPartitions(partitionID, filename);
+			this.partitions.put(partitionID, partition);
+		} catch (IOException e) {
+			log.error("load partition file failed.");
+			e.printStackTrace();
+		}
+
 	}
 
 	/**

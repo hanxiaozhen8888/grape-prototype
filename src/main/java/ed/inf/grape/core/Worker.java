@@ -19,7 +19,12 @@ public interface Worker extends Remote {
 
 	public void addPartition(Partition partition) throws RemoteException;
 
+	public void addPartitionID(int partitionID) throws RemoteException;
+
 	public void addPartitionList(List<Partition> workerPartitions)
+			throws RemoteException;
+
+	public void addPartitionIDList(List<Integer> workerPartitionIDs)
 			throws RemoteException;
 
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,

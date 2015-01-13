@@ -75,6 +75,7 @@ public class Partitioner {
 		return Partitioner.PARTITION_COUNT;
 	}
 
+	@SuppressWarnings("unused")
 	private List<Partition> simplePartition() throws IOException {
 
 		/** approximately compute the size of each partition */
@@ -198,6 +199,20 @@ public class Partitioner {
 		return p;
 	}
 
+	public int getNextPartitionID() {
+
+		/** run program target gpartition */
+
+		int ret = -1;
+
+		if (currentPartitionId < PARTITION_COUNT) {
+			ret = currentPartitionId;
+			currentPartitionId++;
+		}
+
+		return ret;
+	}
+
 	public Map<String, Integer> getVirtualVertex2PartitionMap() {
 
 		try {
@@ -212,8 +227,6 @@ public class Partitioner {
 	public static void main(String[] args) {
 
 		Partitioner partitioner = new Partitioner(STRATEGY_METIS);
-
-		String filename = "/home/yecol/repo/grape/target/file.bin";
 
 		Partition p = partitioner.getNextPartition();
 

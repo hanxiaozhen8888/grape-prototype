@@ -537,8 +537,74 @@ public class Coordinator extends UnicastRemoteObject implements
 		startWork();
 	}
 
-	public void assignPartitionsInfo() {
+	public void assignDistributedPartitions() {
+
+		/**
+		 * Graph file has been partitioned, and the partitioned graph have been
+		 * distributed to workers.
+		 * 
+		 * */
+
 		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
+
+		int totalPartitions = partitioner.getNumOfPartitions();
+
+		int partitionID = partitioner.getNextPartitionID();
+
+		// Assign partitions to workers in the ratio of the number of worker
+		// threads that each worker has.
+		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
+
+			WorkerProxy workerProxy = entry.getValue();
+
+			// Compute the number of partitions to assign
+			int numThreads = workerProxy.getNumThreads();
+			double ratio = ((double) (numThreads)) / totalWorkerThreads.get();
+			log.info("Worker " + workerProxy.getWorkerID());
+			log.info("ThreadNum = " + numThreads + ", Ratio: " + ratio);
+			int numPartitionsToAssign = (int) (ratio * totalPartitions);
+			log.info("numPartitionsToAssign: " + numPartitionsToAssign);
+
+			List<Integer> workerPartitionIDs = new ArrayList<Integer>();
+			for (int i = 0; i < numPartitionsToAssign; i++) {
+				partitionID = partitioner.getNextPartitionID();
+
+				activeWorkerSet.add(entry.getKey());
+				log.info("Adding partition  " + partitionID + " to worker "
+						+ workerProxy.getWorkerID());
+				workerPartitionIDs.add(partitionID);
+				partitionWorkerMap.put(partitionID, workerProxy.getWorkerID());
+			}
+
+			workerProxy.addPartitionIDList(workerPartitionIDs);
+		}
+
+		// Add the remaining partitions (if any) in a round-robin fashion.
+		Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
+				.entrySet().iterator();
+
+		partitionID = partitioner.getNextPartitionID();
+
+		while (partitionID != -1) {
+			// If the remaining partitions is greater than the number of the
+			// workers, start iterating from the beginning again.
+			if (!workerMapIter.hasNext()) {
+				workerMapIter = workerProxyMap.entrySet().iterator();
+			}
+
+			WorkerProxy workerProxy = workerMapIter.next().getValue();
+
+			activeWorkerSet.add(workerProxy.getWorkerID());
+			log.info("Adding partition  " + partitionID
+					+ " to worker " + workerProxy.getWorkerID());
+			partitionWorkerMap.put(partitionID,
+					workerProxy.getWorkerID());
+			workerProxy.addPartitionID(partitionID);
+
+			partitionID = partitioner.getNextPartitionID();
+		}
+
+		// get virtual vertex to partition map
 		this.virtualVertexPartitionMap = partitioner
 				.getVirtualVertex2PartitionMap();
 

@@ -44,6 +44,9 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	/** The partition list. */
 	BlockingQueue<Partition> partitionList;
 
+	/** The partition list. */
+	BlockingQueue<Integer> partitionIDList;
+
 	/** The total partitions. */
 	private int totalPartitions = 0;
 
@@ -108,18 +111,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	}
 
 	/**
-	 * Adds the partition.
-	 * 
-	 * @param partition
-	 *            the partition
-	 */
-	public void addPartition(Partition partition) {
-
-		totalPartitions += 1;
-		partitionList.add(partition);
-	}
-
-	/**
 	 * Exit.
 	 */
 	public void exit() {
@@ -151,6 +142,18 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	}
 
 	/**
+	 * Adds the partition.
+	 * 
+	 * @param partition
+	 *            the partition
+	 */
+	public void addPartition(Partition partition) {
+
+		totalPartitions += 1;
+		partitionList.add(partition);
+	}
+
+	/**
 	 * Adds the partition list.
 	 * 
 	 * @param workerPartitions
@@ -160,6 +163,39 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		try {
 			totalPartitions += workerPartitions.size();
 			worker.addPartitionList(workerPartitions);
+		} catch (RemoteException e) {
+			log.fatal("Remote Exception received from the Worker.");
+			log.fatal("Giving back the partition to the Master.");
+
+			e.printStackTrace();
+			// give the partition back to Master
+			coordinator.removeWorker(workerID);
+			return;
+		}
+	}
+
+	/**
+	 * Adds the partition.
+	 * 
+	 * @param partition
+	 *            the partition
+	 */
+	public void addPartitionID(int partitionID) {
+
+		totalPartitions += 1;
+		partitionIDList.add(partitionID);
+	}
+
+	/**
+	 * Adds the partition list.
+	 * 
+	 * @param workerPartitions
+	 *            the worker partitions
+	 */
+	public void addPartitionIDList(List<Integer> workerPartitionIDs) {
+		try {
+			totalPartitions += workerPartitionIDs.size();
+			worker.addPartitionIDList(workerPartitionIDs);
 		} catch (RemoteException e) {
 			log.fatal("Remote Exception received from the Worker.");
 			log.fatal("Giving back the partition to the Master.");
