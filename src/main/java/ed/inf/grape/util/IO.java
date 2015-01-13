@@ -1,7 +1,10 @@
 package ed.inf.grape.util;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -187,11 +190,18 @@ public class IO {
 
 		fileInputStream = new FileInputStream(filename);
 		sc = new Scanner(fileInputStream, "UTF-8");
-		while (sc.hasNextLine()) {
 
+		int ln = 0;
+
+		while (sc.hasNext()) {
+
+			if (ln % 100000 == 0) {
+				log.info("read line " + ln);
+			}
 			String key = sc.next();
 			int value = sc.nextInt();
 			retMap.put(key, value);
+			ln++;
 		}
 
 		if (fileInputStream != null) {
@@ -205,5 +215,61 @@ public class IO {
 				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
 
 		return retMap;
+	}
+
+	public static boolean serialize(String filePath, Object obj) {
+		boolean serialized = false;
+		FileOutputStream fileOutputStream = null;
+		ObjectOutputStream objectOutputStream = null;
+		try {
+			fileOutputStream = new FileOutputStream(filePath);
+			objectOutputStream = new ObjectOutputStream(fileOutputStream);
+			objectOutputStream.writeObject(obj);
+			objectOutputStream.flush();
+			objectOutputStream.close();
+			serialized = true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			serialized = false;
+		} finally {
+			try {
+				fileOutputStream.close();
+				objectOutputStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+				serialized = false;
+			}
+		}
+		return serialized;
+	}
+
+	/**
+	 * Deserialize the object from the file specified by the file path.
+	 * 
+	 * @param filePath
+	 *            the file path
+	 * @return obj the deserialized object
+	 */
+	public static Object deserialize(String filePath) {
+		FileInputStream fileInputStream = null;
+		ObjectInputStream objectInputStream = null;
+		Object obj = null;
+		try {
+			fileInputStream = new FileInputStream(filePath);
+			objectInputStream = new ObjectInputStream(fileInputStream);
+			obj = objectInputStream.readObject();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				fileInputStream.close();
+				objectInputStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		return obj;
 	}
 }

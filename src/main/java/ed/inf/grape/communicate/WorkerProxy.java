@@ -157,17 +157,14 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 *            the worker partitions
 	 */
 	public void addPartitionList(List<Partition> workerPartitions) {
-		System.out.println("WorkerProxy: addPartitionList");
 		try {
 			totalPartitions += workerPartitions.size();
 			worker.addPartitionList(workerPartitions);
 		} catch (RemoteException e) {
-			log.info("Remote Exception received from the Worker.");
-			log.info("Giving back the partition to the Master.");
+			log.fatal("Remote Exception received from the Worker.");
+			log.fatal("Giving back the partition to the Master.");
 
 			e.printStackTrace();
-
-			log.fatal(e.getStackTrace());
 			// give the partition back to Master
 			coordinator.removeWorker(workerID);
 			return;

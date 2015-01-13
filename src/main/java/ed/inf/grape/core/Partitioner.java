@@ -20,7 +20,6 @@ import ed.inf.grape.graph.cg_graph;
 import ed.inf.grape.graph.edge;
 import ed.inf.grape.util.Config;
 import ed.inf.grape.util.IO;
-import ed.inf.grape.util.Strings;
 
 /**
  * Partitioner, divide a whole graph into several partitions with predefined
@@ -50,9 +49,7 @@ public class Partitioner {
 	/** Partition id */
 	private static int currentPartitionId;
 
-	private List<Partition> partitions;
-
-	static Logger log = LogManager.getLogger(Coordinator.class);
+	static Logger log = LogManager.getLogger(Partitioner.class);
 
 	static {
 
@@ -76,26 +73,6 @@ public class Partitioner {
 
 	public int getNumOfPartitions() {
 		return Partitioner.PARTITION_COUNT;
-	}
-
-	public List<Partition> getPartitions() {
-		if (this.partitions == null) {
-			try {
-				this.partitionGraph();
-			} catch (IOException e) {
-				log.error("partition failed.");
-				log.error(e.getStackTrace());
-			}
-		}
-		return this.partitions;
-	}
-
-	private void partitionGraph() throws IOException {
-		if (this.strategy == STRATEGY_SIMPLE) {
-			this.partitions = this.simplePartition();
-		} else if (this.strategy == STRATEGY_METIS) {
-			this.partitions = this.metisPartition();
-		}
 	}
 
 	private List<Partition> simplePartition() throws IOException {
@@ -195,28 +172,30 @@ public class Partitioner {
 		return partitions;
 	}
 
-	private List<Partition> metisPartition() throws IOException {
+	public Partition getNextPartition() {
 
 		/** run program target gpartition */
 
-		/** TODO: avoid hold all partitions for big graph */
-		List<Partition> partitions = new ArrayList<Partition>();
+		Partition p = null;
 
-		for (int i = 0; i < PARTITION_COUNT; i++) {
+		if (currentPartitionId >= PARTITION_COUNT) {
+			return p;
+		}
+
+		else {
 
 			String partitionFilename = GRAPH_FILE_PATH + ".p"
-					+ String.valueOf(i);
-			Partition p = IO.loadPartitions(i, partitionFilename);
-			partitions.add(p);
+					+ String.valueOf(currentPartitionId);
+			try {
+				p = IO.loadPartitions(currentPartitionId++, partitionFilename);
+			} catch (IOException e) {
+				log.error("read partition file error.");
+				e.printStackTrace();
+			}
 		}
+		log.info(p.getPartitionInfo());
 
-		log.debug("edges partition finished.");
-
-		for (Partition p : partitions) {
-			log.info(p.getPartitionInfo());
-		}
-
-		return partitions;
+		return p;
 	}
 
 	public Map<String, Integer> getVirtualVertex2PartitionMap() {
@@ -233,12 +212,16 @@ public class Partitioner {
 	public static void main(String[] args) {
 
 		Partitioner partitioner = new Partitioner(STRATEGY_METIS);
-		try {
-			partitioner.partitionGraph();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
+		String filename = "/home/yecol/repo/grape/target/file.bin";
+
+		Partition p = partitioner.getNextPartition();
+
+		while (p != null) {
+
+			log.info(p.getPartitionInfo());
+			p = partitioner.getNextPartition();
+		}
 	}
 
 }

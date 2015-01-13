@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jgrapht.util.PrefetchIterator.NextElementFunctor;
 
 import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
@@ -536,13 +537,18 @@ public class Coordinator extends UnicastRemoteObject implements
 		startWork();
 	}
 
+	public void assignPartitionsInfo() {
+		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
+		this.virtualVertexPartitionMap = partitioner
+				.getVirtualVertex2PartitionMap();
+
+	}
+
 	public void assignPartitions() {
 
 		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
 
 		int totalPartitions = partitioner.getNumOfPartitions();
-
-		Iterator<Partition> iter = partitioner.getPartitions().iterator();
 
 		Partition partition = null;
 		partitionWorkerMap = new HashMap<Integer, String>();
@@ -563,7 +569,7 @@ public class Coordinator extends UnicastRemoteObject implements
 
 			List<Partition> workerPartitions = new ArrayList<Partition>();
 			for (int i = 0; i < numPartitionsToAssign; i++) {
-				partition = iter.next();
+				partition = partitioner.getNextPartition();
 
 				activeWorkerSet.add(entry.getKey());
 				log.info("Adding partition  " + partition.getPartitionID()
@@ -572,19 +578,24 @@ public class Coordinator extends UnicastRemoteObject implements
 				partitionWorkerMap.put(partition.getPartitionID(),
 						workerProxy.getWorkerID());
 			}
+
+			// FIXME:uneffective ~ for amazon dataset, it takes 10 mins to
+			// transfer data.
 			workerProxy.addPartitionList(workerPartitions);
 		}
 
 		// Add the remaining partitions (if any) in a round-robin fashion.
 		Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
 				.entrySet().iterator();
-		while (iter.hasNext()) {
+
+		partition = partitioner.getNextPartition();
+
+		while (partition != null) {
 			// If the remaining partitions is greater than the number of the
 			// workers, start iterating from the beginning again.
 			if (!workerMapIter.hasNext()) {
 				workerMapIter = workerProxyMap.entrySet().iterator();
 			}
-			partition = iter.next();
 
 			WorkerProxy workerProxy = workerMapIter.next().getValue();
 
@@ -594,6 +605,8 @@ public class Coordinator extends UnicastRemoteObject implements
 			partitionWorkerMap.put(partition.getPartitionID(),
 					workerProxy.getWorkerID());
 			workerProxy.addPartition(partition);
+
+			partition = partitioner.getNextPartition();
 		}
 
 		// get virtual vertex to partition map

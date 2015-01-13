@@ -24,8 +24,8 @@ public class Partition implements Serializable {
 		super();
 		this.partitionID = partitionID;
 		this.fragment = new cg_graph();
-		this.incomingVertices = new HashSet<String>();
-		this.outgoingVertices = new HashSet<String>();
+		this.incomingVertices = new HashSet<String>(5000000);
+		this.outgoingVertices = new HashSet<String>(5000000);
 	}
 
 	public int getPartitionID() {
