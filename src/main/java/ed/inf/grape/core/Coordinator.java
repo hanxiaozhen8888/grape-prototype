@@ -548,9 +548,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
 		partitionWorkerMap = new HashMap<Integer, String>();
 
-		int totalPartitions = partitioner.getNumOfPartitions();
-
-		int partitionID = partitioner.getNextPartitionID();
+		int totalPartitions = partitioner.getNumOfPartitions(), partitionID;
 
 		// Assign partitions to workers in the ratio of the number of worker
 		// threads that each worker has.
