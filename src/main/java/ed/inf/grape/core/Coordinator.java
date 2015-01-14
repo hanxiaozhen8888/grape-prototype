@@ -528,7 +528,7 @@ public class Coordinator extends UnicastRemoteObject implements
 
 		startTime = System.currentTimeMillis();
 
-		assignPartitions();
+		assignDistributedPartitions();
 		sendWorkerPartitionInfo();
 
 		// TODO init health manager
@@ -546,6 +546,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		 * */
 
 		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
+		partitionWorkerMap = new HashMap<Integer, String>();
 
 		int totalPartitions = partitioner.getNumOfPartitions();
 
@@ -567,41 +568,44 @@ public class Coordinator extends UnicastRemoteObject implements
 
 			List<Integer> workerPartitionIDs = new ArrayList<Integer>();
 			for (int i = 0; i < numPartitionsToAssign; i++) {
-				partitionID = partitioner.getNextPartitionID();
+				if (partitioner.hasNextPartitionID()) {
+					partitionID = partitioner.getNextPartitionID();
 
-				activeWorkerSet.add(entry.getKey());
-				log.info("Adding partition  " + partitionID + " to worker "
-						+ workerProxy.getWorkerID());
-				workerPartitionIDs.add(partitionID);
-				partitionWorkerMap.put(partitionID, workerProxy.getWorkerID());
+					activeWorkerSet.add(entry.getKey());
+					log.info("Adding partition  " + partitionID + " to worker "
+							+ workerProxy.getWorkerID());
+					workerPartitionIDs.add(partitionID);
+					partitionWorkerMap.put(partitionID,
+							workerProxy.getWorkerID());
+				}
+				workerProxy.addPartitionIDList(workerPartitionIDs);
 			}
-
-			workerProxy.addPartitionIDList(workerPartitionIDs);
 		}
 
-		// Add the remaining partitions (if any) in a round-robin fashion.
-		Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
-				.entrySet().iterator();
-
-		partitionID = partitioner.getNextPartitionID();
-
-		while (partitionID != -1) {
-			// If the remaining partitions is greater than the number of the
-			// workers, start iterating from the beginning again.
-			if (!workerMapIter.hasNext()) {
-				workerMapIter = workerProxyMap.entrySet().iterator();
-			}
-
-			WorkerProxy workerProxy = workerMapIter.next().getValue();
-
-			activeWorkerSet.add(workerProxy.getWorkerID());
-			log.info("Adding partition  " + partitionID
-					+ " to worker " + workerProxy.getWorkerID());
-			partitionWorkerMap.put(partitionID,
-					workerProxy.getWorkerID());
-			workerProxy.addPartitionID(partitionID);
+		if (partitioner.hasNextPartitionID()) {
+			// Add the remaining partitions (if any) in a round-robin fashion.
+			Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
+					.entrySet().iterator();
 
 			partitionID = partitioner.getNextPartitionID();
+
+			while (partitionID != -1) {
+				// If the remaining partitions is greater than the number of the
+				// workers, start iterating from the beginning again.
+				if (!workerMapIter.hasNext()) {
+					workerMapIter = workerProxyMap.entrySet().iterator();
+				}
+
+				WorkerProxy workerProxy = workerMapIter.next().getValue();
+
+				activeWorkerSet.add(workerProxy.getWorkerID());
+				log.info("Adding partition  " + partitionID + " to worker "
+						+ workerProxy.getWorkerID());
+				partitionWorkerMap.put(partitionID, workerProxy.getWorkerID());
+				workerProxy.addPartitionID(partitionID);
+
+				partitionID = partitioner.getNextPartitionID();
+			}
 		}
 
 		// get virtual vertex to partition map

@@ -199,15 +199,18 @@ public class Partitioner {
 		return p;
 	}
 
+	public boolean hasNextPartitionID() {
+
+		return currentPartitionId < PARTITION_COUNT;
+	}
+
 	public int getNextPartitionID() {
 
 		/** run program target gpartition */
-
 		int ret = -1;
 
 		if (currentPartitionId < PARTITION_COUNT) {
-			ret = currentPartitionId;
-			currentPartitionId++;
+			ret = currentPartitionId++;
 		}
 
 		return ret;
@@ -228,12 +231,13 @@ public class Partitioner {
 
 		Partitioner partitioner = new Partitioner(STRATEGY_METIS);
 
-		Partition p = partitioner.getNextPartition();
+		int p = partitioner.getNextPartitionID();
 
-		while (p != null) {
+		while (p != -1) {
 
-			log.info(p.getPartitionInfo());
-			p = partitioner.getNextPartition();
+			log.info("partitionID=" + p);
+			p = partitioner.getNextPartitionID();
+			// p = partitioner.getNextPartition();
 		}
 	}
 
