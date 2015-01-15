@@ -37,7 +37,7 @@ public class Config {
 	 */
 	public static synchronized Config getInstance() {
 		if (config == null) {
-			config = new Config("./src/main/resources/config.properties");
+			config = new Config("./config.properties");
 		}
 		return config;
 	}

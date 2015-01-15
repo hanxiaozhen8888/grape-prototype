@@ -43,6 +43,7 @@
 									<includes>
 										<include>*.policy</include>
 										<include>*.dat</include>
+										<include>*.properties</include>
 									</includes>
 								</resource>
 								<resource>
