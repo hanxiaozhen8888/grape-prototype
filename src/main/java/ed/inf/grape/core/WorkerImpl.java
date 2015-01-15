@@ -191,6 +191,29 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 		for (int partitionID : workerPartitionIDs) {
 
+			if (!this.partitions.containsKey(partitionID)) {
+
+				String filename = GRAPH_FILE_PATH + ".p"
+						+ String.valueOf(partitionID);
+
+				Partition partition;
+				try {
+					partition = IO.loadPartitions(partitionID, filename);
+					this.partitions.put(partitionID, partition);
+				} catch (IOException e) {
+					log.error("load partition file failed.");
+					e.printStackTrace();
+				}
+			}
+		}
+
+	}
+
+	@Override
+	public void addPartitionID(int partitionID) throws RemoteException {
+
+		if (!this.partitions.containsKey(partitionID)) {
+
 			String filename = GRAPH_FILE_PATH + ".p"
 					+ String.valueOf(partitionID);
 
@@ -202,22 +225,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				log.error("load partition file failed.");
 				e.printStackTrace();
 			}
-		}
-
-	}
-
-	@Override
-	public void addPartitionID(int partitionID) throws RemoteException {
-
-		String filename = GRAPH_FILE_PATH + ".p" + String.valueOf(partitionID);
-
-		Partition partition;
-		try {
-			partition = IO.loadPartitions(partitionID, filename);
-			this.partitions.put(partitionID, partition);
-		} catch (IOException e) {
-			log.error("load partition file failed.");
-			e.printStackTrace();
 		}
 
 	}
