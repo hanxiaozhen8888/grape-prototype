@@ -7,15 +7,10 @@ import java.rmi.RemoteException;
  * Defines the interface through which the application programmer communicates
  * with the Master.
  * 
- * @author Prakash Chandrasekaran
- * @author Gautham Narayanasamy
- * @author Vijayaraghavan Subbaiah
+ * @author yecol
  */
 
 public interface Client2Coordinator extends Remote {
-
-	/** The Constant SERVICE_NAME. */
-	public static final String SERVICE_NAME = "grape-coordinator";
 
 	/**
 	 * Submits the graph problem to be computed.

@@ -8,22 +8,25 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ed.inf.grape.L.LocalComputeTask;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
-import ed.inf.grape.util.Config;
+import ed.inf.grape.util.Constants;
 import ed.inf.grape.util.Dev;
 import ed.inf.grape.util.IO;
 
@@ -50,11 +53,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 */
 	private boolean stopSendingMessage;
 
-	// /** The queue of partitions in the current superstep. */
-	// private BlockingQueue<Partition> currentPartitionQueue;
+	/** The queue of partitions in the current superstep. */
+	private BlockingQueue<LocalComputeTask> currentLocalComputeTaskQueue;
 
 	/** The queue of partitions in the next superstep. */
-	// private BlockingQueue<Partition> partitionQueue;
+	private BlockingQueue<LocalComputeTask> nextLocalComputeTasksQueue;
 
 	/** hosting partitions */
 	private Map<Integer, Partition> partitions;
@@ -92,31 +95,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** The super step counter. */
 	private long superstep = 0;
 
-	/** Limitation of threads on each worker */
-	private static int MAX_THREAD_LIMITATION = 0;
-
-	private static String GRAPH_FILE_PATH = null;
-	private static int PARTITION_COUNT = 0;
-
 	static Logger log = LogManager.getLogger(WorkerImpl.class);
-
-	static {
-
-		try {
-			MAX_THREAD_LIMITATION = Config.getInstance().getIntProperty(
-					"THREAD_LIMIT_ON_EACH_MACHINE");
-			GRAPH_FILE_PATH = Config.getInstance().getStringProperty(
-					"GRAPH_FILE_PATH");
-			PARTITION_COUNT = Config.getInstance().getIntProperty(
-					"PARTITION_COUNT");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		if (MAX_THREAD_LIMITATION == 0) {
-			MAX_THREAD_LIMITATION = Integer.MAX_VALUE;
-		}
-	}
 
 	/**
 	 * Instantiates a new worker.
@@ -146,9 +125,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		this.currentIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.previousIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.outgoingMessages = new ConcurrentHashMap<String, List<Message>>();
-		// TODO:change this when deploy
 		this.numThreads = Math.min(Runtime.getRuntime().availableProcessors(),
-				MAX_THREAD_LIMITATION);
+				Constants.MAX_THREAD_LIMITATION);
 		this.stopSendingMessage = false;
 		for (int i = 0; i < numThreads; i++) {
 			log.debug("Starting Thread " + (i + 1));
@@ -198,7 +176,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 			if (!this.partitions.containsKey(partitionID)) {
 
-				String filename = GRAPH_FILE_PATH + ".p"
+				String filename = Constants.GRAPH_FILE_PATH + ".p"
 						+ String.valueOf(partitionID);
 
 				Partition partition;
@@ -219,7 +197,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 		if (!this.partitions.containsKey(partitionID)) {
 
-			String filename = GRAPH_FILE_PATH + ".p"
+			String filename = Constants.GRAPH_FILE_PATH + ".p"
 					+ String.valueOf(partitionID);
 
 			Partition partition;
@@ -270,16 +248,44 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 							+ superstep);
 					try {
 
-						startSuperStep = false;
-						checkAndSendMessage();
-						// Partition partition = currentPartitionQueue.take();
-						// log.info("runned in the loop");
-						// nextPartitionQueue.add(partition);
+						// startSuperStep = false;
 						// checkAndSendMessage();
 
-						// } catch (InterruptedException e) {
-						// log.error("InterruptedException");
-						// log.error(e.getStackTrace());
+						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue
+								.take();
+						Partition workingPartition = partitions
+								.get(localComputeTask.getPartitionID());
+
+						if (superstep == 0) {
+							/** begin step. initial compute */
+							localComputeTask.compute(workingPartition);
+							updateOutgoingMessages(localComputeTask
+									.getMessages());
+						}
+
+						else {
+							/** not begin step. incremental compute */
+							List<Message> messageForWorkingPartition = previousIncomingMessages
+									.get(localComputeTask.getPartitionID());
+
+							if (messageForWorkingPartition != null) {
+
+								// TODO: since we record messages mapped to
+								// vertex. it is possible to compute on
+								// central of vertex.
+
+								localComputeTask.incrementalCompute(
+										workingPartition,
+										messageForWorkingPartition);
+
+								updateOutgoingMessages(localComputeTask
+										.getMessages());
+							}
+						}
+
+						nextLocalComputeTasksQueue.add(localComputeTask);
+						checkAndSendMessage();
+
 					} catch (Exception e) {
 						log.error(e.getStackTrace());
 					}
@@ -295,25 +301,46 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		private synchronized void checkAndSendMessage() {
 			log.debug("checkAndSendMessage");
 
-			Message m2Worker = new Message("message to worker: hello worker");
-			Message m2Coordinator = new Message(
-					"message to coordinator: hello coordinator");
+			if (!stopSendingMessage
+					&& (nextLocalComputeTasksQueue.size() == totalPartitionsAssigned)) {
+				stopSendingMessage = true;
+				log.debug(this + " WorkerImpl: Superstep " + superstep
+						+ " completed.");
 
-			try {
-				coordinatorProxy.localComputeCompleted(workerID, m2Coordinator);
-			} catch (RemoteException e) {
-				e.printStackTrace();
+				startSuperStep = false;
+
+				for (Entry<String, List<Message>> entry : outgoingMessages
+						.entrySet()) {
+					try {
+						worker2WorkerProxy.sendMessage(entry.getKey(),
+								entry.getValue());
+					} catch (RemoteException e) {
+						System.out.println("Can't send message to Worker "
+								+ entry.getKey() + " which is down");
+					}
+				}
+
+				// This worker will be active only if it has some messages
+				// queued up in the next superstep.
+				// activeWorkerSet will have all the workers who will be active
+				// in the next superstep.
+				Set<String> activeWorkerSet = new HashSet<String>();
+				activeWorkerSet.addAll(outgoingMessages.keySet());
+				if (currentIncomingMessages.size() > 0) {
+					activeWorkerSet.add(workerID);
+				}
+				// Send a message to the Master saying that this superstep has
+				// been completed.
+				try {
+					coordinatorProxy.localComputeCompleted(workerID,
+							activeWorkerSet);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+
 			}
-
-			log.debug(this + "sendingMessage: " + m2Worker);
-
-			// try {
-			// worker2WorkerProxy.sendMessage(entry.getKey(),
-			// entry.getValue());
-			// } catch (RemoteException e) {
-			// System.out.println("Can't send message to Worker "
-			// + entry.getKey() + " which is down");
-			// }
+			// System.out.println(this + " after sendMessage check " +
+			// sendingMessage);
 
 		}
 	}
@@ -354,37 +381,29 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	private void updateOutgoingMessages(List<Message> messagesFromCompute) {
 		log.debug("updateOutgoingMessages");
 
-		// String workerID = null;
-		// VertexID vertexID = null;
-		// Message message = null;
-		// Map<VertexID, List<Message>> workerMessages = null;
-		// List<Message> messageList = null;
-		// for (Entry<VertexID, Message> entry : messagesFromCompute.entrySet())
-		// {
-		// vertexID = entry.getKey();
-		// message = entry.getValue();
-		// workerID = mapPartitionIdToWorkerId.get(vertexID.getPartitionID());
-		// if (workerID.equals(this.workerID)) {
-		// updateIncomingMessages(vertexID, message);
-		// } else {
-		// if (outgoingMessages.containsKey(workerID)) {
-		// workerMessages = outgoingMessages.get(workerID);
-		// if (workerMessages.containsKey(vertexID)) {
-		// workerMessages.get(vertexID).add(message);
-		// } else {
-		// messageList = new ArrayList<Message>();
-		// messageList.add(message);
-		// workerMessages.put(vertexID, messageList);
-		// }
-		// } else {
-		// messageList = new ArrayList<Message>();
-		// messageList.add(message);
-		// workerMessages = new HashMap<Object, Object>();
-		// workerMessages.put(vertexID, messageList);
-		// outgoingMessages.put(workerID, workerMessages);
-		// }
-		// }
-		// }
+		String workerID = null;
+		int vertexID = -1;
+		int partitionID = -1;
+		List<Message> workerMessages = null;
+		for (Message message : messagesFromCompute) {
+			vertexID = message.getTarget();
+			partitionID = mapVertexIdToPartitionId.get(vertexID);
+			workerID = mapPartitionIdToWorkerId.get(partitionID);
+			if (workerID.equals(this.workerID)) {
+
+				/** send message to self. */
+				updateIncomingMessages(partitionID, message);
+			} else {
+
+				if (outgoingMessages.containsKey(workerID)) {
+					outgoingMessages.get(workerID).add(message);
+				} else {
+					workerMessages = new ArrayList<Message>();
+					workerMessages.add(message);
+					outgoingMessages.put(workerID, workerMessages);
+				}
+			}
+		}
 	}
 
 	/**
@@ -438,19 +457,13 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			log.info("masterMachineName " + coordinatorMachineName);
 
 			String masterURL = "//" + coordinatorMachineName + "/"
-					+ Worker2Coordinator.SERVICE_NAME;
-			// Registry registry =
-			// LocateRegistry.getRegistry(masterMachineName);
-			// Worker2Master worker2Master = (Worker2Master) registry
-			// .lookup(Worker2Master.SERVICE_NAME);
+					+ Constants.COORDINATOR_SERVICE_NAME;
 			Worker2Coordinator worker2Coordinator = (Worker2Coordinator) Naming
 					.lookup(masterURL);
 			Worker worker = new WorkerImpl();
-			// System.out.println("here " + worker2Master.getClass());
 			Worker2Coordinator coordinatorProxy = worker2Coordinator.register(
 					worker, worker.getWorkerID(), worker.getNumThreads());
-			// Worker2Master masterProxy = (Worker2Master)
-			// worker2Master.register(null, null, 0);
+
 			worker.setCoordinatorProxy(coordinatorProxy);
 			log.info("Worker is bound and ready for computations ");
 
@@ -471,43 +484,37 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	}
 
 	/**
-	 * Receive message. <<<<<<< HEAD
-	 * 
-	 * @param incomingMessages
-	 *            the incoming messages
+	 * Receive message.
 	 * 
 	 * @param incomingMessages
 	 *            the incoming messages
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
-	// public void receiveMessage(Map<VertexID, List<Message>> incomingMessages)
-	// throws RemoteException {
-	// Map<VertexID, List<Message>> partitionMessages = null;
-	// int partitionID = 0;
-	// VertexID vertexID = null;
-	// List<Message> messageList = null;
-	// Map<VertexID, List<Message>> vertexMessageMap = null;
-	// for (Entry<VertexID, List<Message>> entry : incomingMessages.entrySet())
-	// {
-	// vertexID = entry.getKey();
-	// messageList = entry.getValue();
-	// partitionID = vertexID.getPartitionID();
-	// if (currentIncomingMessages.containsKey(partitionID)) {
-	// partitionMessages = currentIncomingMessages.get(partitionID);
-	// if (partitionMessages.containsKey(vertexID)) {
-	// partitionMessages.get(vertexID).addAll(messageList);
-	// } else {
-	// partitionMessages.put(vertexID, messageList);
-	// }
-	// } else {
-	// vertexMessageMap = new HashMap<Object, Object>();
-	// vertexMessageMap.put(vertexID, messageList);
-	// currentIncomingMessages.put(partitionID, vertexMessageMap);
-	// }
-	//
-	// }
-	// }
+	public void receiveMessage(List<Message> incomingMessages)
+			throws RemoteException {
+
+		log.debug("recevie incomingMessages: " + incomingMessages.size());
+		log.debug(incomingMessages.toString());
+
+		/** partitionID to message list */
+		List<Message> partitionMessages = null;
+
+		int partitionID = -1;
+		int vertexID = -1;
+
+		for (Message message : incomingMessages) {
+			vertexID = message.getTarget();
+			partitionID = mapVertexIdToPartitionId.get(vertexID);
+			if (currentIncomingMessages.containsKey(partitionID)) {
+				currentIncomingMessages.get(vertexID).add(message);
+			} else {
+				partitionMessages = new ArrayList<Message>();
+				partitionMessages.add(message);
+				currentIncomingMessages.put(partitionID, partitionMessages);
+			}
+		}
+	}
 
 	/**
 	 * Receives the messages sent by all the vertices in the same node and
@@ -519,29 +526,16 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param incomingMessage
 	 *            Represents the incoming message for the destination vertex
 	 */
-	// public void updateIncomingMessages(VertexID destinationVertex,
-	// Message incomingMessage) {
-	// Map<VertexID, List<Message>> partitionMessages = null;
-	// List<Message> newMessageList = null;
-	// int partitionID = destinationVertex.getPartitionID();
-	// // partitionMessages = currentIncomingMessages.get(partitionID);
-	// if (currentIncomingMessages.containsKey(partitionID)) {
-	// partitionMessages = currentIncomingMessages.get(partitionID);
-	// if (partitionMessages.containsKey(destinationVertex)) {
-	// partitionMessages.get(destinationVertex).add(incomingMessage);
-	// } else {
-	// newMessageList = new ArrayList<Message>();
-	// newMessageList.add(incomingMessage);
-	// partitionMessages.put(destinationVertex, newMessageList);
-	// }
-	// } else {
-	// partitionMessages = new HashMap<Object, Object>();
-	// newMessageList = new ArrayList<Message>();
-	// newMessageList.add(incomingMessage);
-	// partitionMessages.put(destinationVertex, newMessageList);
-	// currentIncomingMessages.put(partitionID, partitionMessages);
-	// }
-	// }
+	public void updateIncomingMessages(int partitionID, Message incomingMessage) {
+		List<Message> partitionMessages = null;
+		if (currentIncomingMessages.containsKey(partitionID)) {
+			currentIncomingMessages.get(partitionID).add(incomingMessage);
+		} else {
+			partitionMessages = new ArrayList<Message>();
+			partitionMessages.add(incomingMessage);
+			currentIncomingMessages.put(partitionID, partitionMessages);
+		}
+	}
 
 	/**
 	 * The worker receives the command to start the next superstep from the
@@ -717,26 +711,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	// }
 	// GeneralUtils.writeToFile(outputFilePath, contents.toString(), true);
 	// }
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see system.Worker#updateCheckpointFile()
-	 */
-	// @Override
-	// public void updateCheckpointFile() throws RemoteException {
-	// if (this.currentCheckpointFile != null) {
-	// GeneralUtils.removeFile(this.currentCheckpointFile);
-	// }
-	// this.currentCheckpointFile = this.nextCheckpointFile;
-	// System.out.println("WorkerImpl: Updating checkpoint file: "
-	// + this.currentCheckpointFile);
-	// }
-
-	public void receiveMessage(Message incomingMessages) throws RemoteException {
-		// TODO Auto-generated method stub
-		log.info(incomingMessages);
-	}
 
 	public void writeOutput(String outputFilePath) throws RemoteException {
 		// TODO Auto-generated method stub

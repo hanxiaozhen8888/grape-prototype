@@ -34,7 +34,8 @@ public interface Worker extends Remote {
 
 	public void halt() throws RemoteException;
 
-	public void receiveMessage(Message incomingMessages) throws RemoteException;
+	public void receiveMessage(List<Message> incomingMessages)
+			throws RemoteException;
 
 	public void startWork() throws RemoteException;
 

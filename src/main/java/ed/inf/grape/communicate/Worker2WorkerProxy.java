@@ -36,16 +36,11 @@ public class Worker2WorkerProxy implements Worker2Worker, Remote {
 	 * @param outgoingMessages
 	 *            set of messages to be sent to the worker
 	 */
-	// public void sendMessage(String receiverWorkerID,
-	// Map<VertexID, List<Message>> outgoingMessages)
-	// throws RemoteException {
-	// mapWorkerIdToWorker.get(receiverWorkerID).receiveMessage(
-	// outgoingMessages);
-	// }
-
-	public void sendMessage(String receiverWorkerID, Message outgoingMessages)
-			throws RemoteException {
+	@Override
+	public void sendMessage(String receiverWorkerID,
+			List<Message> outgoingMessages) throws RemoteException {
 		mapWorkerIdToWorker.get(receiverWorkerID).receiveMessage(
 				outgoingMessages);
+
 	}
 }

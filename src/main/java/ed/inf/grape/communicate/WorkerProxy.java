@@ -4,6 +4,7 @@ import java.rmi.AccessException;
 import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -370,18 +371,15 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		this.worker.writeOutput(outputFilePath);
 	}
 
-	public void localComputeCompleted(String workerID, Message message)
-			throws RemoteException {
-		this.coordinator.localComputeCompleted(workerID, message);
-	}
-
 	public void startWork() throws RemoteException {
 		// TODO Auto-generated method stub
 		this.worker.startWork();
 	}
 
-	// public void updateCheckpointFile() throws RemoteException {
-	// this.worker.updateCheckpointFile();
-	// }
+	@Override
+	public void localComputeCompleted(String workerID,
+			Set<String> activeWorkerIDs) throws RemoteException {
+		this.coordinator.localComputeCompleted(workerID, activeWorkerIDs);
+	}
 
 }

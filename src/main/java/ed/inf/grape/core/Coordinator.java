@@ -20,12 +20,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jgrapht.util.PrefetchIterator.NextElementFunctor;
 
 import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.util.Constants;
 
 /**
  * The Class Coordinator.
@@ -40,9 +40,6 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	/** The master thread. */
 	// private Thread masterThread;
-
-	/** The Constant SERVICE_NAME. */
-	private static final String SERVICE_NAME = "grape-coordinator";
 
 	/** The total number of worker threads. */
 	private static AtomicInteger totalWorkerThreads = new AtomicInteger(0);
@@ -78,9 +75,6 @@ public class Coordinator extends UnicastRemoteObject implements
 	private BlockingQueue<String> resultQueue = new LinkedBlockingDeque<String>();
 
 	static Logger log = LogManager.getLogger(Coordinator.class);
-
-	static {
-	}
 
 	/**
 	 * Instantiates a new master.
@@ -272,15 +266,16 @@ public class Coordinator extends UnicastRemoteObject implements
 	 * @throws Exception
 	 *             the exception
 	 */
-	@SuppressWarnings({ "static-access" })
 	public static void main(String[] args) throws Exception {
 		System.setSecurityManager(new RMISecurityManager());
 		Coordinator coordinator;
 		try {
 			coordinator = new Coordinator();
-			Registry registry = LocateRegistry.createRegistry(1099);
-			registry.rebind(coordinator.SERVICE_NAME, coordinator);
-			log.info("Coordinator instance is bound to 1099 and ready.");
+			Registry registry = LocateRegistry
+					.createRegistry(Constants.RMI_PORT);
+			registry.rebind(Constants.COORDINATOR_SERVICE_NAME, coordinator);
+			log.info("Coordinator instance is bound to " + Constants.RMI_PORT
+					+ " and ready.");
 		} catch (RemoteException e) {
 			Coordinator.log.error(e);
 			e.printStackTrace();
@@ -683,13 +678,6 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	}
 
-	public void localComputeCompleted(String workerID, Message message)
-			throws RemoteException {
-		log.info("Coordinator received info worker " + workerID + " saying: "
-				+ message);
-
-	}
-
 	public void startWork() throws RemoteException {
 		log.info("Master: Starting Superstep ");
 		// System.out.println("Active worker set: " + this.activeWorkerSet);
@@ -706,6 +694,14 @@ public class Coordinator extends UnicastRemoteObject implements
 			}
 		}
 		this.activeWorkerSet.clear();
+	}
+
+	@Override
+	public void localComputeCompleted(String workerID,
+			Set<String> activeWorkerIDs) throws RemoteException {
+		log.info("Coordinator received activeWorkerIDs from worker " + workerID
+				+ " saying: " + activeWorkerIDs);
+		this.activeWorkerSet.addAll(activeWorkerIDs);
 	}
 
 }

@@ -2,23 +2,17 @@ package ed.inf.grape.communicate;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.util.Set;
 
-import ed.inf.grape.core.Message;
 import ed.inf.grape.core.Worker;
 
 /**
- * Defines an interface to register remote ({@link system.WorkerImpl Worker})
- * with the {@link system.Master Master}.
+ * Defines an interface to register remote Worker with the coordinator
  * 
- * @author Prakash Chandrasekaran
- * @author Gautham Narayanasamy
- * @author Vijayaraghavan Subbaiah
+ * @author Yecol
  */
 
 public interface Worker2Coordinator extends java.rmi.Remote, Serializable {
-
-	/** The Constant SERVICE_NAME. */
-	public static final String SERVICE_NAME = "grape-coordinator";
 
 	/**
 	 * Registers remote workers with the master.
@@ -45,19 +39,10 @@ public interface Worker2Coordinator extends java.rmi.Remote, Serializable {
 	 *            the worker id
 	 */
 
-	public void localComputeCompleted(String workerID, Message message)
-			throws RemoteException;
+	public void localComputeCompleted(String workerID,
+			Set<String> activeWorkerIDs) throws RemoteException;
 
 	public void startWork() throws RemoteException;
-
-	/**
-	 * Defines a deployment convenience to stop each registered
-	 * {@link system.Worker Worker} and then stop the {@link system.Master
-	 * Master}.
-	 * 
-	 * @throws java.rmi.RemoteException
-	 *             Throws RemoteException when registered workers are stopped.
-	 */
 
 	public void shutdown() throws RemoteException;
 

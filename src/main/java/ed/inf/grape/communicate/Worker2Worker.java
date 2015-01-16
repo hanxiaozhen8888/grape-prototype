@@ -1,6 +1,7 @@
 package ed.inf.grape.communicate;
 
 import java.rmi.RemoteException;
+import java.util.List;
 
 import ed.inf.grape.core.Message;
 
@@ -18,10 +19,7 @@ public interface Worker2Worker extends java.rmi.Remote {
 	 * @param outgoingMessages
 	 *            set of messages to be sent to the worker
 	 */
-	// public void sendMessage(String receiverWorkerID,
-	// Map<VertexID, List<Message>> outgoingMessages)
-	// throws RemoteException;
 
-	public void sendMessage(String receiverWorkerID, Message outgoingMessages)
-			throws RemoteException;
+	public void sendMessage(String receiverWorkerID,
+			List<Message> outgoingMessages) throws RemoteException;
 }
