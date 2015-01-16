@@ -6,7 +6,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 import ed.inf.grape.communicate.Client2Coordinator;
-import ed.inf.grape.util.Constants;
+import ed.inf.grape.util.KV;
 
 public class CommunicateTest {
 
@@ -14,7 +14,7 @@ public class CommunicateTest {
 			NotBoundException, MalformedURLException, ClassNotFoundException {
 		String masterMachineName = args[0];
 		String masterURL = "//" + masterMachineName + "/"
-				+ Constants.COORDINATOR_SERVICE_NAME;
+				+ KV.COORDINATOR_SERVICE_NAME;
 		Client2Coordinator client2Coordinator = (Client2Coordinator) Naming
 				.lookup(masterURL);
 		runApplication(client2Coordinator);

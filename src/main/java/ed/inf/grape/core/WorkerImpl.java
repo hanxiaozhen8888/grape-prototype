@@ -26,7 +26,7 @@ import ed.inf.grape.L.LocalComputeTask;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
-import ed.inf.grape.util.Constants;
+import ed.inf.grape.util.KV;
 import ed.inf.grape.util.Dev;
 import ed.inf.grape.util.IO;
 
@@ -126,7 +126,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		this.previousIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.outgoingMessages = new ConcurrentHashMap<String, List<Message>>();
 		this.numThreads = Math.min(Runtime.getRuntime().availableProcessors(),
-				Constants.MAX_THREAD_LIMITATION);
+				KV.MAX_THREAD_LIMITATION);
 		this.stopSendingMessage = false;
 		for (int i = 0; i < numThreads; i++) {
 			log.debug("Starting Thread " + (i + 1));
@@ -176,7 +176,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 			if (!this.partitions.containsKey(partitionID)) {
 
-				String filename = Constants.GRAPH_FILE_PATH + ".p"
+				String filename = KV.GRAPH_FILE_PATH + ".p"
 						+ String.valueOf(partitionID);
 
 				Partition partition;
@@ -197,7 +197,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 		if (!this.partitions.containsKey(partitionID)) {
 
-			String filename = Constants.GRAPH_FILE_PATH + ".p"
+			String filename = KV.GRAPH_FILE_PATH + ".p"
 					+ String.valueOf(partitionID);
 
 			Partition partition;
@@ -457,7 +457,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			log.info("masterMachineName " + coordinatorMachineName);
 
 			String masterURL = "//" + coordinatorMachineName + "/"
-					+ Constants.COORDINATOR_SERVICE_NAME;
+					+ KV.COORDINATOR_SERVICE_NAME;
 			Worker2Coordinator worker2Coordinator = (Worker2Coordinator) Naming
 					.lookup(masterURL);
 			Worker worker = new WorkerImpl();
@@ -575,118 +575,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	// System.out.println("Partition queue: " + partitionQueue.size());
 	// }
 
-	/**
-	 * Sets the initial message for the Worker that has the source vertex.
-	 * 
-	 * @param initialMessage
-	 *            the initial message ======= Sets the initial message for the
-	 *            Worker that has the source vertex.
-	 * 
-	 * @param initialMessage
-	 *            the initial message
-	 * @throws RemoteException
-	 *             the remote exception >>>>>>>
-	 *             42b91fb45356bdb8ce40222761cb75525693696a
-	 */
-	// public void setInitialMessage(
-	// ConcurrentHashMap<Integer, Map<VertexID, List<Message>>> initialMessage)
-	// throws RemoteException {
-	// this.currentIncomingMessages = initialMessage;
-	// }
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see system.Worker#checkPoint(long)
-	 */
-	// @Override
-	// public void checkPoint(long superstep) throws Exception {
-	// System.out.println("WorkerImpl: checkPoint " + superstep);
-	// this.superstep = superstep;
-	// WorkerData wd = new WorkerData(this.nextPartitionQueue,
-	// this.currentIncomingMessages);
-	// // Serialization
-	//
-	// // Don't update the currentCheckpointFile until the Master confirms that
-	// // the checkpointing had succeeded in all the Workers.
-	// this.nextCheckpointFile = CHECKPOINTING_DIRECTORY + File.separator
-	// + workerID + "_" + superstep;
-	// // String newFilePath = CHECKPOINTING_DIRECTORY + File.separator +
-	// // workerID;
-	// GeneralUtils.serialize(this.nextCheckpointFile, wd);
-	// // nextCheckpointFile = tmpFilePath;
-	// // GeneralUtils.renameFile(tmpFilePath, newFilePath);
-	// }
-
-	/**
-	 * Master checks the heart beat of the worker by calling this method.
-	 * 
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// @Override
-	// public void sendHeartBeat() throws RemoteException {
-	// }
-
-	/**
-	 * Method to prepare the worker.
-	 * 
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// @Override
-	// public void startRecovery() throws RemoteException {
-	// System.out.println("WorkerImpl: startRecovery");
-	// this.stopSendingMessage = false;
-	// this.startSuperStep = false;
-	// this.currentPartitionQueue.clear();
-	// this.previousIncomingMessages.clear();
-	// this.outgoingMessages.clear();
-	//
-	// WorkerData workerData = (WorkerData) GeneralUtils
-	// .deserialize(this.currentCheckpointFile);
-	// this.currentIncomingMessages = (ConcurrentHashMap<Integer, Map<VertexID,
-	// List<Message>>>) workerData
-	// .getMessages();
-	// this.nextPartitionQueue = (BlockingQueue<Partition>) workerData
-	// .getPartitions();
-	//
-	// }
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see system.Worker#finishRecovery()
-	 */
-	// @Override
-	// public void finishRecovery() throws RemoteException {
-	// System.out.println("WorkerImpl: finishRecovery");
-	// try {
-	// // Do checkpointing after assigning recovered partitions.
-	// checkPoint(this.superstep);
-	// } catch (Exception e) {
-	// System.out.println("checkpoint failure");
-	// throw new RemoteException();
-	// }
-	// }
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see system.Worker#addRecoveredData(system.Partition, java.util.Map)
-	 */
-	// public void addRecoveredData(Partition partition,
-	// Map<VertexID, List<Message>> messages) throws RemoteException {
-	// System.out.println("WorkerImpl: addRecoveredData");
-	// // System.out.println("Partition " + partition.getPartitionID());
-	// // System.out.println("Messages: " + messages);
-	// if (messages != null) {
-	// this.currentIncomingMessages.put(partition.getPartitionID(),
-	// messages);
-	// }
-	// this.nextPartitionQueue.add(partition);
-	// }
-
 	/** shutdown the worker */
 	public void shutdown() throws RemoteException {
 		java.util.Date date = new java.util.Date();
@@ -694,23 +582,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				+ new Timestamp(date.getTime()));
 		System.exit(0);
 	}
-
-	/**
-	 * Writes the result of the graph computation to a output file
-	 * 
-	 * @param outputFilePath
-	 *            Represents the output file for writing the results
-	 */
-	// public void writeOutput(String outputFilePath) throws RemoteException {
-	// System.out.println("Printing the final state of the partitions");
-	// Iterator<Partition> iter = nextPartitionQueue.iterator();
-	// // Append the appropriate content to the output file.
-	// StringBuilder contents = new StringBuilder();
-	// while (iter.hasNext()) {
-	// contents.append(iter.next());
-	// }
-	// GeneralUtils.writeToFile(outputFilePath, contents.toString(), true);
-	// }
 
 	public void writeOutput(String outputFilePath) throws RemoteException {
 		// TODO Auto-generated method stub

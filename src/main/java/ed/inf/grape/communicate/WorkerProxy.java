@@ -359,18 +359,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		}
 	}
 
-	/**
-	 * Write output.
-	 * 
-	 * @param outputFilePath
-	 *            the output file path
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	public void writeOutput(String outputFilePath) throws RemoteException {
-		this.worker.writeOutput(outputFilePath);
-	}
-
 	public void startWork() throws RemoteException {
 		// TODO Auto-generated method stub
 		this.worker.startWork();

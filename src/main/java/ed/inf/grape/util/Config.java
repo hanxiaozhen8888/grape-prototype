@@ -124,6 +124,23 @@ public class Config {
 	}
 
 	/**
+	 * Gets the double property for the given key
+	 * 
+	 * @param key
+	 *            represents the property member
+	 * @return Returns the double property for the given key
+	 * @throws PropertyNotFoundException
+	 */
+	public Boolean getBooleanProperty(String key)
+			throws PropertyNotFoundException {
+		checkProperties();
+		String value = properties.getProperty(key);
+		if (value == null)
+			throw new PropertyNotFoundException(key);
+		return Boolean.parseBoolean(value);
+	}
+
+	/**
 	 * Gets the long property for the given key
 	 * 
 	 * @param key

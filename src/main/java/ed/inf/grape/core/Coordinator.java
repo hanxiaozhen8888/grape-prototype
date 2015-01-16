@@ -25,7 +25,7 @@ import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
 import ed.inf.grape.graph.Partition;
-import ed.inf.grape.util.Constants;
+import ed.inf.grape.util.KV;
 
 /**
  * The Class Coordinator.
@@ -272,9 +272,9 @@ public class Coordinator extends UnicastRemoteObject implements
 		try {
 			coordinator = new Coordinator();
 			Registry registry = LocateRegistry
-					.createRegistry(Constants.RMI_PORT);
-			registry.rebind(Constants.COORDINATOR_SERVICE_NAME, coordinator);
-			log.info("Coordinator instance is bound to " + Constants.RMI_PORT
+					.createRegistry(KV.RMI_PORT);
+			registry.rebind(KV.COORDINATOR_SERVICE_NAME, coordinator);
+			log.info("Coordinator instance is bound to " + KV.RMI_PORT
 					+ " and ready.");
 		} catch (RemoteException e) {
 			Coordinator.log.error(e);
