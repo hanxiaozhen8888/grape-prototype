@@ -24,6 +24,7 @@ import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
 import ed.inf.grape.util.Config;
+import ed.inf.grape.util.Dev;
 import ed.inf.grape.util.IO;
 
 /**
@@ -166,7 +167,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 */
 	public void addPartition(Partition partition) throws RemoteException {
 		log.info("receive partition:" + partition.getPartitionInfo());
+		log.debug(Dev.currentRuntimeState());
 		this.partitions.put(partition.getPartitionID(), partition);
+		log.debug(Dev.currentRuntimeState());
 	}
 
 	/**
@@ -179,10 +182,12 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 */
 	public void addPartitionList(List<Partition> workerPartitions)
 			throws RemoteException {
+		log.debug(Dev.currentRuntimeState());
 		for (Partition p : workerPartitions) {
 			log.info("receive partition:" + p.getPartitionInfo());
 			this.partitions.put(p.getPartitionID(), p);
 		}
+		log.debug(Dev.currentRuntimeState());
 	}
 
 	@Override
