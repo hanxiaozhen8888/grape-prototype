@@ -12,7 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ed.inf.grape.core.Coordinator;
-import ed.inf.grape.core.Message;
+import ed.inf.grape.core.Query;
 import ed.inf.grape.core.Worker;
 import ed.inf.grape.graph.Partition;
 
@@ -227,6 +227,20 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	}
 
 	/**
+	 * Sets the worker partition info.
+	 * 
+	 * @param mapPartitionIdToWorkerId
+	 *            the map partition id to worker id
+	 * @param mapWorkerIdToWorker
+	 *            the map worker id to worker
+	 * @throws RemoteException
+	 *             the remote exception
+	 */
+	public void setQuery(Query query) throws RemoteException {
+		worker.setQuery(query);
+	}
+
+	/**
 	 * Gets the worker id.
 	 * 
 	 * @return the worker id
@@ -359,15 +373,14 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		}
 	}
 
-	public void startWork() throws RemoteException {
-		// TODO Auto-generated method stub
-		this.worker.startWork();
-	}
-
 	@Override
 	public void localComputeCompleted(String workerID,
 			Set<String> activeWorkerIDs) throws RemoteException {
 		this.coordinator.localComputeCompleted(workerID, activeWorkerIDs);
+	}
+
+	public void nextLocalCompute(long superstep) throws RemoteException {
+		this.worker.nextLocalCompute(superstep);
 	}
 
 }

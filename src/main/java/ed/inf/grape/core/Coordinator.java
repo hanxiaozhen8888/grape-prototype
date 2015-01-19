@@ -62,11 +62,13 @@ public class Coordinator extends UnicastRemoteObject implements
 	/** Set of Workers maintained for acknowledgement. */
 	private Set<String> workerAcknowledgementSet = new HashSet<String>();
 
-	/** Set of workers who will be active in the next superstep. */
+	/** Set of workers who will be active in the next super step. */
 	private Set<String> activeWorkerSet = new HashSet<String>();
 
 	/** The start time. */
 	long startTime;
+
+	long superstep = 0;
 
 	/** Partition manager. */
 	private Partitioner partitioner;
@@ -77,7 +79,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	static Logger log = LogManager.getLogger(Coordinator.class);
 
 	/**
-	 * Instantiates a new master.
+	 * Instantiates a new coordinator.
 	 * 
 	 * @throws RemoteException
 	 *             the remote exception
@@ -86,6 +88,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	 */
 	public Coordinator() throws RemoteException {
 		super();
+
 	}
 
 	/**
@@ -158,76 +161,14 @@ public class Coordinator extends UnicastRemoteObject implements
 		}
 	}
 
-	/**
-	 * Assign partitions to workers based on the number of processors (threads)
-	 * that each worker has.
-	 * 
-	 * @param <T>
-	 *            the generic type
-	 * @param graphPartitioner
-	 *            the graph partitioner
-	 * @param sourceVertexID
-	 *            the source vertex id
-	 * @param initData
-	 *            the data
-	 * @throws PropertyNotFoundException
-	 *             the property not found exception
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	/*
-	 * private <T> void assignPartitions(GraphPartitioner graphPartitioner, long
-	 * sourceVertexID, Data<T> initData) throws PropertyNotFoundException,
-	 * RemoteException { int totalPartitions =
-	 * graphPartitioner.getNumPartitions(); Iterator<Partition> iter =
-	 * graphPartitioner.iterator(); Partition partition = null;
-	 * partitionWorkerMap = new HashMap<>();
-	 * 
-	 * int sourceVertex_partitionID = GeneralUtils
-	 * .getPartitionID(sourceVertexID);
-	 * 
-	 * // Assign partitions to workers in the ratio of the number of worker //
-	 * threads that each worker has. for (Map.Entry<String, WorkerProxy> entry :
-	 * workerProxyMap.entrySet()) { WorkerProxy workerProxy = entry.getValue();
-	 * int numThreads = workerProxy.getNumThreads(); double ratio = ((double)
-	 * (numThreads)) / totalWorkerThreads.get(); System.out.println("Worker " +
-	 * workerProxy.getWorkerID()); System.out.println("Ratio: " + ratio); int
-	 * numPartitionsToAssign = (int) (ratio * totalPartitions);
-	 * System.out.println("numPartitionsToAssign: " + numPartitionsToAssign);
-	 * List<Partition> workerPartitions = new ArrayList<>(); for (int i = 0; i <
-	 * numPartitionsToAssign; i++) { partition = iter.next(); // Get the
-	 * partition that has the sourceVertex, and add the // worker that has the
-	 * partition to the worker set from which // acknowledgments will be
-	 * received. if (partition.getPartitionID() == sourceVertex_partitionID) {
-	 * activeWorkerSet.add(entry.getKey());
-	 * 
-	 * } System.out.println("Adding partition  " + partition.getPartitionID() +
-	 * " to worker " + workerProxy.getWorkerID());
-	 * workerPartitions.add(partition);
-	 * partitionWorkerMap.put(partition.getPartitionID(),
-	 * workerProxy.getWorkerID()); }
-	 * workerProxy.addPartitionList(workerPartitions); }
-	 * 
-	 * // Add the remaining partitions (if any) in a round-robin fashion.
-	 * Iterator<Map.Entry<String, WorkerProxy>> workerMapIter = workerProxyMap
-	 * .entrySet().iterator(); while (iter.hasNext()) { // If the remaining
-	 * partitions is greater than the number of the // workers, start iterating
-	 * from the beginning again. if (!workerMapIter.hasNext()) { workerMapIter =
-	 * workerProxyMap.entrySet().iterator(); } partition = iter.next();
-	 * 
-	 * WorkerProxy workerProxy = workerMapIter.next().getValue(); // Get the
-	 * partition that has the sourceVertex, and add the worker // that has the
-	 * partition to the worker set from which // acknowledgments will be
-	 * received. if (partition.getPartitionID() == sourceVertex_partitionID) {
-	 * activeWorkerSet.add(workerProxy.getWorkerID()); }
-	 * System.out.println("Adding partition  " + partition.getPartitionID() +
-	 * " to worker " + workerProxy.getWorkerID());
-	 * workerProxy.addPartition(partition);
-	 * partitionWorkerMap.put(partition.getPartitionID(),
-	 * workerProxy.getWorkerID()); }
-	 * 
-	 * setInitialMessage(sourceVertex_partitionID, sourceVertexID, initData); }
-	 */
+	public void sendQuery(Query query) throws RemoteException {
+		log.debug("Coordinator: sendWorkerPartitionInfo");
+		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
+			WorkerProxy workerProxy = entry.getValue();
+			workerProxy.setQuery(query);
+		}
+	}
+
 	/**
 	 * Sets the initial message for the Worker that has the source vertex.
 	 * 
@@ -271,8 +212,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		Coordinator coordinator;
 		try {
 			coordinator = new Coordinator();
-			Registry registry = LocateRegistry
-					.createRegistry(KV.RMI_PORT);
+			Registry registry = LocateRegistry.createRegistry(KV.RMI_PORT);
 			registry.rebind(KV.COORDINATOR_SERVICE_NAME, coordinator);
 			log.info("Coordinator instance is bound to " + KV.RMI_PORT
 					+ " and ready.");
@@ -382,93 +322,6 @@ public class Coordinator extends UnicastRemoteObject implements
 	// }
 
 	/**
-	 * start checkpointing in master.
-	 */
-	// public void checkPoint() {
-	// System.out.println("Master: checkpointing!");
-	// File f = new File(CHECKPOINTING_DIRECTORY);
-	// if (!f.exists()) {
-	// f.mkdirs();
-	// }
-	// boolean isCheckpointingSuccess = true;
-	// for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
-	// WorkerProxy workerProxy = entry.getValue();
-	// // System.out.println("Checkpointing for Worker: " +
-	// // workerProxy.getWorkerID());
-	// try {
-	// workerProxy.checkPoint(superstep);
-	// } catch (Exception e) {
-	// System.out.println("Exception while checkpointing at Worker "
-	// + workerProxy.getWorkerID());
-	// e.printStackTrace();
-	// isCheckpointingSuccess = false;
-	// continue;
-	// }
-	// }
-	// /*
-	// * If the checkpointing succeeds in all Workers, update the checkpoint
-	// * file. Otherwise, the Workers that are alive will point to an previous
-	// * checkpoint file. This is done to make fault tolerance work even when
-	// * a Worker is killed during checkpointing.
-	// */
-	// if (isCheckpointingSuccess) {
-	// updateCheckpointFile();
-	// this.serializeActiveWorkerSet();
-	// this.lastCheckpointedSuperstep = superstep;
-	// } else { // One of the Workers failed while checkpointing! Don't update
-	// // the checkpoint file
-	// System.out
-	// .println("One of the Workers failed while checkpointing!");
-	// }
-	//
-	// }
-
-	/**
-	 * Update checkpoint file for all the Workers.
-	 */
-	// public void updateCheckpointFile() {
-	// System.out.println("Updating checkpoint file for all Workers.");
-	// for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
-	// WorkerProxy workerProxy = entry.getValue();
-	// try {
-	// workerProxy.updateCheckpointFile();
-	// } catch (Exception e) {
-	// System.out
-	// .println("Exception while updating checkpoint file at Worker "
-	// + workerProxy.getWorkerID());
-	// e.printStackTrace();
-	// continue;
-	// }
-	// }
-	// }
-
-	/**
-	 * Serialize active worker set.
-	 */
-	// public void serializeActiveWorkerSet() {
-	// // Serialize the active worker set
-	// String filePath = CHECKPOINTING_DIRECTORY + File.separator
-	// + "activeworkers";
-	// GeneralUtils.serialize(filePath, activeWorkerSet);
-	// }
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see api.Client2Master#takeResult()
-	 */
-	// @Override
-	// public String takeResult() throws RemoteException {
-	// String result = null;
-	// try {
-	// result = resultQueue.take();
-	// } catch (InterruptedException e) {
-	// e.printStackTrace();
-	// }
-	// return result;
-	// }
-
-	/**
 	 * Gets the partition worker map.
 	 * 
 	 * @return the partition worker map
@@ -511,25 +364,23 @@ public class Coordinator extends UnicastRemoteObject implements
 		System.exit(0);
 	}
 
-	public String takeResult() throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public void loadGraph(String graphFilename) throws RemoteException {
 
-	public void putTask(String graphFilename) throws RemoteException {
-		// TODO Auto-generated method stub
-
-		log.info("receive task with graph file = " + graphFilename);
+		log.info("load Graph = " + graphFilename);
 
 		startTime = System.currentTimeMillis();
 
 		assignDistributedPartitions();
 		sendWorkerPartitionInfo();
+	}
 
-		// TODO init health manager
+	public void putTask(Query query) throws RemoteException {
+		// TODO Auto-generated method stub
 
-		// test only
-		startWork();
+		log.info("receive task with query = " + query);
+
+		sendQuery(query);
+		nextLocalCompute();
 	}
 
 	public void assignDistributedPartitions() {
@@ -678,30 +529,57 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	}
 
-	public void startWork() throws RemoteException {
-		log.info("Master: Starting Superstep ");
+	/**
+	 * Start super step.
+	 * 
+	 * @throws RemoteException
+	 *             the remote exception
+	 */
+	public synchronized void nextLocalCompute() throws RemoteException {
+		log.info("Coordinator: next local compute. round = " + superstep);
 		// System.out.println("Active worker set: " + this.activeWorkerSet);
 		this.workerAcknowledgementSet.clear();
 		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
-		log.info("this.activeWorkerSet = " + this.activeWorkerSet.size());
 
 		for (String workerID : this.activeWorkerSet) {
-			try {
-				log.debug("workerID = " + workerID);
-				this.workerProxyMap.get(workerID).startWork();
-			} catch (RemoteException e) {
-				log.error(e.getStackTrace());
-			}
+			this.workerProxyMap.get(workerID).nextLocalCompute(superstep);
 		}
 		this.activeWorkerSet.clear();
 	}
 
 	@Override
-	public void localComputeCompleted(String workerID,
+	public synchronized void localComputeCompleted(String workerID,
 			Set<String> activeWorkerIDs) throws RemoteException {
+
+		this.activeWorkerSet.addAll(activeWorkerSet);
+		this.workerAcknowledgementSet.remove(workerID);
+
+		if (this.workerAcknowledgementSet.size() == 0) {
+			superstep++;
+			if (activeWorkerSet.size() != 0)
+				nextLocalCompute();
+			else {
+				finishLocalCompute();
+			}
+		}
+
 		log.info("Coordinator received activeWorkerIDs from worker " + workerID
 				+ " saying: " + activeWorkerIDs);
 		this.activeWorkerSet.addAll(activeWorkerIDs);
+	}
+
+	public void finishLocalCompute() {
+
+		/**
+		 * TODO: send flag to coordinator. the coordinator determined the next
+		 * step, whether save results or assemble results.
+		 * 
+		 * TODO: is assemble enabled, then assemble results from workers. and
+		 * write results to file.
+		 */
+
+		log.info("finish local compute. with round = " + superstep);
+
 	}
 
 }

@@ -6,6 +6,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 import ed.inf.grape.communicate.Client2Coordinator;
+import ed.inf.grape.core.Query;
 import ed.inf.grape.util.KV;
 
 public class CommunicateTest {
@@ -25,7 +26,8 @@ public class CommunicateTest {
 	 */
 	private static void runApplication(Client2Coordinator client2Coordinator)
 			throws RemoteException {
-		client2Coordinator.putTask("yecolTestGraph.txt");
+		Query q = new Query();
+		client2Coordinator.putTask(q);
 	}
 
 }

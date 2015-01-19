@@ -42,8 +42,6 @@ public interface Worker2Coordinator extends java.rmi.Remote, Serializable {
 	public void localComputeCompleted(String workerID,
 			Set<String> activeWorkerIDs) throws RemoteException;
 
-	public void startWork() throws RemoteException;
-
 	public void shutdown() throws RemoteException;
 
 }

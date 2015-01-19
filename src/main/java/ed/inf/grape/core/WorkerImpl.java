@@ -18,6 +18,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,11 +89,15 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** partitionId to Current Incoming messages - used in next Super Step. */
 	private ConcurrentHashMap<Integer, List<Message>> currentIncomingMessages;
 
+	/** Query */
+	private Query query;
+
 	/**
 	 * boolean variable indicating whether the partitions can be worked upon by
 	 * the workers in each superstep.
 	 **/
-	private boolean startSuperStep = false;
+	private boolean flagLocalCompute = false;
+	private boolean flagSendMessage = false;
 
 	/** The super step counter. */
 	private long superstep = 0;
@@ -119,9 +126,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		}
 
 		this.workerID = hostName + "_" + timestamp;
-		// this.currentPartitionQueue = new LinkedBlockingDeque<Partition>();
-		// this.partitionQueue = new LinkedBlockingQueue<Partition>();
 		this.partitions = new HashMap<Integer, Partition>();
+		this.currentLocalComputeTaskQueue = new LinkedBlockingDeque<LocalComputeTask>();
+		this.nextLocalComputeTasksQueue = new LinkedBlockingQueue<LocalComputeTask>();
 		this.currentIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.previousIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.outgoingMessages = new ConcurrentHashMap<String, List<Message>>();
@@ -243,7 +250,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
-				while (startSuperStep) {
+				while (flagLocalCompute) {
 					log.debug(this + "Superstep loop started for superstep "
 							+ superstep);
 					try {
@@ -307,7 +314,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				log.debug(this + " WorkerImpl: Superstep " + superstep
 						+ " completed.");
 
-				startSuperStep = false;
+				flagLocalCompute = false;
 
 				for (Entry<String, List<Message>> entry : outgoingMessages
 						.entrySet()) {
@@ -367,7 +374,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		// this.currentPartitionQueue.clear();
 		this.previousIncomingMessages.clear();
 		this.stopSendingMessage = false;
-		this.startSuperStep = false;
+		this.flagLocalCompute = false;
 		this.totalPartitionsAssigned = 0;
 	}
 
@@ -537,44 +544,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		}
 	}
 
-	/**
-	 * The worker receives the command to start the next superstep from the
-	 * master. Set startSuperStep to true; assign previousIncomingMessages to
-	 * currentIncomingMessages; reset currentIncomingMessages;
-	 * 
-	 * @param superStepCounter
-	 *            the super step counter
-	 */
-	// public void startSuperStep(long superStepCounter) {
-	// log.debug("WorkerImpl: startSuperStep - superStepCounter: "
-	// + superStepCounter);
-
-	// this.superstep = superStepCounter;
-	// // Put all elements in current incoming queue to previous incoming
-	// queue
-	// // and clear the current incoming queue.
-	// this.previousIncomingMessages.clear();
-	// this.previousIncomingMessages.putAll(this.currentIncomingMessages);
-	// this.currentIncomingMessages.clear();
-	//
-	// this.stopSendingMessage = false;
-	// this.startSuperStep = true;
-	//
-	// this.outgoingMessages.clear();
-	// // Put all elements in completed partitions back to partition queue
-	// and
-	// // clear the completed partitions.
-	// // Note: To avoid concurrency issues, it is very important that
-	// // completed partitions is cleared before the Worker threads start to
-	// // operate on the partition queue in the next superstep
-	// BlockingQueue<Partition> temp = new LinkedBlockingDeque<Partition>(
-	// nextPartitionQueue);
-	// this.nextPartitionQueue.clear();
-	// this.currentPartitionQueue.addAll(temp);
-
-	// System.out.println("Partition queue: " + partitionQueue.size());
-	// }
-
 	/** shutdown the worker */
 	public void shutdown() throws RemoteException {
 		java.util.Date date = new java.util.Date();
@@ -583,16 +552,56 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		System.exit(0);
 	}
 
-	public void writeOutput(String outputFilePath) throws RemoteException {
-		// TODO Auto-generated method stub
+	@Override
+	public void nextLocalCompute(long superstep) throws RemoteException {
+
+		/**
+		 * Next local compute. No generated new local compute tasks. Transit
+		 * compute task and status from the last step.
+		 * */
+
+		this.superstep = superstep;
+
+		// Put all elements in current incoming queue to previous incoming queue
+		// and clear the current incoming queue.
+		this.previousIncomingMessages.clear();
+		this.previousIncomingMessages.putAll(this.currentIncomingMessages);
+		this.currentIncomingMessages.clear();
+
+		this.stopSendingMessage = false;
+		this.flagLocalCompute = true;
+
+		this.outgoingMessages.clear();
+
+		// Put all local compute tasks in current task queue.
+		// clear the completed partitions.
+		// Note: To avoid concurrency issues, it is very important that
+		// completed partitions is cleared before the Worker threads start to
+		// operate on the partition queue in the next super step
+		BlockingQueue<LocalComputeTask> temp = new LinkedBlockingDeque<LocalComputeTask>(
+				nextLocalComputeTasksQueue);
+		this.nextLocalComputeTasksQueue.clear();
+		this.currentLocalComputeTaskQueue.addAll(temp);
 
 	}
 
-	public void startWork() throws RemoteException {
-		// TODO Auto-generated method stub
-		log.info("Worker receive the flag from coordinator, begin to work.");
-		log.debug("hosting" + this.partitions.size() + "partitions");
-		this.startSuperStep = true;
-	}
+	@Override
+	public void setQuery(Query query) throws RemoteException {
+		/**
+		 * Get distributed query from coordinator. and instantiate local compute
+		 * tasks.
+		 * */
+		this.query = query;
 
+		log.info("Get query:" + query.toString());
+
+		for (int i = 0; i < this.partitions.size(); i++) {
+			LocalComputeTask localComputeTask = new LocalComputeTask(query, i);
+			this.nextLocalComputeTasksQueue.add(localComputeTask);
+		}
+
+		log.info("Instantiate " + this.nextLocalComputeTasksQueue.size()
+				+ " local task.");
+
+	}
 }

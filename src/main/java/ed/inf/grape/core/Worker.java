@@ -17,6 +17,8 @@ public interface Worker extends Remote {
 	public void setCoordinatorProxy(Worker2Coordinator coordinatorProxy)
 			throws RemoteException;
 
+	public void setQuery(Query query) throws RemoteException;
+
 	public void addPartition(Partition partition) throws RemoteException;
 
 	public void addPartitionID(int partitionID) throws RemoteException;
@@ -37,7 +39,7 @@ public interface Worker extends Remote {
 	public void receiveMessage(List<Message> incomingMessages)
 			throws RemoteException;
 
-	public void startWork() throws RemoteException;
+	public void nextLocalCompute(long superstep) throws RemoteException;
 
 	public void shutdown() throws RemoteException;
 
