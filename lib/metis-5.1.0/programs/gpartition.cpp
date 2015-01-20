@@ -253,8 +253,10 @@ int main(int argc, char *argv[])
 
     FreeGraph(&graph);
     gk_free((void **)&part, LTERM);
-    gk_free((void **)&params->filename, &params->tpwgtsfile, &params->tpwgts,
-            &params->ubvecstr, &params->ubvec, &params, LTERM);
+
+    // FIXME: due to some abort. delete the gk_free. may cause leak of memory. @Yecol
+    // gk_free((void **)&params->filename, &params->tpwgtsfile, &params->tpwgts,
+    //         &params->ubvecstr, &params->ubvec, &params, LTERM);
 
 
 

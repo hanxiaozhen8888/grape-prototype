@@ -26,8 +26,12 @@ public class CommunicateTest {
 	 */
 	private static void runApplication(Client2Coordinator client2Coordinator)
 			throws RemoteException {
+
+		client2Coordinator.preProcess();
+
 		Query q = new Query();
 		client2Coordinator.putTask(q);
+
 	}
 
 }

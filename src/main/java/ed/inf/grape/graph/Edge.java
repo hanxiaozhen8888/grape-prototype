@@ -2,23 +2,16 @@ package ed.inf.grape.graph;
 
 import java.io.Serializable;
 
-public class Edge implements Serializable {
+import org.jgrapht.graph.DefaultEdge;
 
-	private static final long serialVersionUID = 1009364742090719813L;
-	private int source;
-	private int target;
+public class Edge extends DefaultEdge implements Serializable {
 
-	public Edge(int source, int target) {
-		this.source = source;
-		this.target = target;
+	private static final long serialVersionUID = -2443804491738425451L;
+
+	public static final String TYPE_INNER = "0";
+	public static final String TYPE_OUTGOING = "1";
+	public static final String TYPE_INCOMING = "2";
+
+	public Edge() {
 	}
-
-	public int getSource() {
-		return this.source;
-	}
-
-	public int getTarget() {
-		return this.target;
-	}
-
 }

@@ -2,6 +2,8 @@ package ed.inf.grape.core;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,5 +30,12 @@ public class Result implements Serializable {
 
 		/** add how to assemble a final result from results */
 		log.debug("write result to file: " + filename);
+	}
+	
+	
+	public Map<Integer,Double> ranks;
+	
+	public Result(){
+		ranks = new HashMap<Integer, Double>();
 	}
 }

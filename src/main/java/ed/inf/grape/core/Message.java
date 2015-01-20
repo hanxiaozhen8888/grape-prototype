@@ -6,28 +6,26 @@ public class Message implements Serializable {
 
 	private static final long serialVersionUID = -6215563083195145662L;
 
-	private int messageSourceVertexID;
+	private int destinationVertexID;
 
-	private int messageTargetVertexID;
+	private Double content;
 
-	private String message;
-
-	public Message(String message) {
+	public Message(int destination, Double message) {
 		super();
-		this.message = message;
+		this.destinationVertexID = destination;
+		this.content = message;
 	}
 
-	public int getSource() {
-		return this.messageSourceVertexID;
+	public int getDestinationVertexID() {
+		return this.destinationVertexID;
 	}
 
-	public int getTarget() {
-		return this.messageTargetVertexID;
+	public Double getContent() {
+		return this.content;
 	}
 
 	@Override
 	public String toString() {
-		return "Message [" + message + "] " + messageSourceVertexID + " -> "
-				+ messageTargetVertexID;
+		return "Message [" + content + "] -> " + destinationVertexID;
 	}
 }

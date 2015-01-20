@@ -23,4 +23,8 @@ public interface Client2Coordinator extends Remote {
 	 *            the application specific vertex class name
 	 */
 	public void putTask(Query query) throws RemoteException;
+
+	public void preProcess() throws RemoteException;
+
+	public void postProcess() throws RemoteException;
 }

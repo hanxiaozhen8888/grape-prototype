@@ -294,7 +294,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 						checkAndSendMessage();
 
 					} catch (Exception e) {
-						log.error(e.getStackTrace());
+						e.printStackTrace();
 					}
 				}
 			}
@@ -393,7 +393,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		int partitionID = -1;
 		List<Message> workerMessages = null;
 		for (Message message : messagesFromCompute) {
-			vertexID = message.getTarget();
+			vertexID = message.getDestinationVertexID();
 			partitionID = mapVertexIdToPartitionId.get(vertexID);
 			workerID = mapPartitionIdToWorkerId.get(partitionID);
 			if (workerID.equals(this.workerID)) {
@@ -511,7 +511,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		int vertexID = -1;
 
 		for (Message message : incomingMessages) {
-			vertexID = message.getTarget();
+			vertexID = message.getDestinationVertexID();
 			partitionID = mapVertexIdToPartitionId.get(vertexID);
 			if (currentIncomingMessages.containsKey(partitionID)) {
 				currentIncomingMessages.get(vertexID).add(message);

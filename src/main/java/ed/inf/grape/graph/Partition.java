@@ -3,6 +3,8 @@ package ed.inf.grape.graph;
 import java.io.Serializable;
 import java.util.HashSet;
 
+import org.jgrapht.graph.DefaultDirectedWeightedGraph;
+
 /**
  * Data structure of partition, including a graph fragment and vertices with
  * crossing edges.
@@ -11,69 +13,63 @@ import java.util.HashSet;
  *
  */
 
-public class Partition implements Serializable {
+public class Partition extends DefaultDirectedWeightedGraph<Integer, Edge>
+		implements Serializable {
 
 	private static final long serialVersionUID = -4757004627010733180L;
 
 	private int partitionID;
-	private cg_graph fragment;
-	private HashSet<String> incomingVertices;
-	private HashSet<String> outgoingVertices;
+	private HashSet<Integer> incomingVertices;
+	private HashSet<Integer> outgoingVertices;
 
 	public Partition(int partitionID) {
-		super();
+		super(Edge.class);
 		this.partitionID = partitionID;
-		this.fragment = new cg_graph();
-		this.incomingVertices = new HashSet<String>(5000000);
-		this.outgoingVertices = new HashSet<String>(5000000);
+		this.incomingVertices = new HashSet<Integer>();
+		this.outgoingVertices = new HashSet<Integer>();
 	}
 
 	public int getPartitionID() {
 		return partitionID;
 	}
 
-	public cg_graph getFragment() {
-		return fragment;
+	public boolean addVertex(Integer vertex) {
+		return this.addVertex(vertex);
 	}
 
-	public boolean addVertex(String vertex) {
-		return fragment.addVertex(vertex);
-	}
+	public Edge addEdge(Integer sourceVertex, Integer targetVertex) {
 
-	public edge addEdge(String sourceVertex, String targetVertex) {
-
-		if (!fragment.containsVertex(sourceVertex)) {
-			fragment.addVertex(sourceVertex);
+		if (!this.containsVertex(sourceVertex)) {
+			this.addVertex(sourceVertex);
 		}
 
-		if (!fragment.containsVertex(targetVertex)) {
-			fragment.addVertex(targetVertex);
+		if (!this.containsVertex(targetVertex)) {
+			this.addVertex(targetVertex);
 		}
 
-		return fragment.addEdge(sourceVertex, targetVertex);
+		return this.addEdge(sourceVertex, targetVertex);
 	}
 
-	public HashSet<String> getIncomingVertices() {
+	public HashSet<Integer> getIncomingVertices() {
 		return incomingVertices;
 	}
 
-	public HashSet<String> getOutgoingVertices() {
+	public HashSet<Integer> getOutgoingVertices() {
 		return outgoingVertices;
 	}
 
-	public void addOutgoingVertex(String vertex) {
+	public void addOutgoingVertex(Integer vertex) {
 		this.outgoingVertices.add(vertex);
 	}
 
-	public void addIncomingVertex(String vertex) {
+	public void addIncomingVertex(Integer vertex) {
 		this.incomingVertices.add(vertex);
 	}
 
 	public String getPartitionInfo() {
 		return "pID = " + this.partitionID + " | vertices = "
-				+ fragment.vertexSet().size() + " | edges = "
-				+ fragment.edgeSet().size() + " | iv = "
-				+ incomingVertices.size() + " | ov = "
-				+ outgoingVertices.size();
+				+ this.vertexSet().size() + " | edges = "
+				+ this.edgeSet().size() + " | iv = " + incomingVertices.size()
+				+ " | ov = " + outgoingVertices.size();
 	}
 }

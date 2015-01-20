@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.Properties;
 
 public class Config {
@@ -37,7 +38,15 @@ public class Config {
 	 */
 	public static synchronized Config getInstance() {
 		if (config == null) {
-			config = new Config("./config.properties");
+			try {
+				File self = null;
+				self = new File(Config.class.getProtectionDomain()
+						.getCodeSource().getLocation().toURI().getPath());
+				config = new Config(self.getParent().toString()
+						+ "/config.properties");
+			} catch (URISyntaxException e) {
+				e.printStackTrace();
+			}
 		}
 		return config;
 	}

@@ -25,6 +25,7 @@ import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.util.Config;
 import ed.inf.grape.util.KV;
 
 /**
@@ -579,6 +580,17 @@ public class Coordinator extends UnicastRemoteObject implements
 		 */
 
 		log.info("finish local compute. with round = " + superstep);
+
+	}
+
+	@Override
+	public void preProcess() throws RemoteException {
+		this.loadGraph(KV.GRAPH_FILE_PATH);
+	}
+
+	@Override
+	public void postProcess() throws RemoteException {
+		// TODO Auto-generated method stub
 
 	}
 
