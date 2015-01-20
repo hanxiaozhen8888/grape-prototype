@@ -537,8 +537,8 @@ public class Coordinator extends UnicastRemoteObject implements
 	 *             the remote exception
 	 */
 	public synchronized void nextLocalCompute() throws RemoteException {
-		log.info("Coordinator: next local compute. round = " + superstep);
-		// System.out.println("Active worker set: " + this.activeWorkerSet);
+		log.info("Coordinator: next local compute. superstep = " + superstep);
+
 		this.workerAcknowledgementSet.clear();
 		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
 
@@ -552,7 +552,10 @@ public class Coordinator extends UnicastRemoteObject implements
 	public synchronized void localComputeCompleted(String workerID,
 			Set<String> activeWorkerIDs) throws RemoteException {
 
-		this.activeWorkerSet.addAll(activeWorkerSet);
+		log.info("Coordinator received activeWorkerIDs from worker " + workerID
+				+ " saying: " + activeWorkerIDs);
+		this.activeWorkerSet.addAll(activeWorkerIDs);
+
 		this.workerAcknowledgementSet.remove(workerID);
 
 		if (this.workerAcknowledgementSet.size() == 0) {
@@ -563,10 +566,6 @@ public class Coordinator extends UnicastRemoteObject implements
 				finishLocalCompute();
 			}
 		}
-
-		log.info("Coordinator received activeWorkerIDs from worker " + workerID
-				+ " saying: " + activeWorkerIDs);
-		this.activeWorkerSet.addAll(activeWorkerIDs);
 	}
 
 	public void finishLocalCompute() {

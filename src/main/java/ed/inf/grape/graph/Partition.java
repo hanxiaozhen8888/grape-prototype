@@ -54,6 +54,11 @@ public class Partition extends DefaultDirectedWeightedGraph<Integer, Edge>
 		return outgoingVertices;
 	}
 
+	public boolean isInnerVertex(int vertex) {
+		return (!outgoingVertices.contains(vertex))
+				&& (!incomingVertices.contains(vertex));
+	}
+
 	public void addOutgoingVertex(Integer vertex) {
 		this.outgoingVertices.add(vertex);
 	}

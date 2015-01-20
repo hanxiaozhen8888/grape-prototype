@@ -388,8 +388,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		int vertexID = -1;
 		int partitionID = -1;
 		List<Message> workerMessages = null;
+		
 		for (Message message : messagesFromCompute) {
-
+			
 			vertexID = message.getDestinationVertexID();
 
 			if (!mapVertexIdToPartitionId.containsKey(vertexID)) {
@@ -415,6 +416,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				}
 			}
 		}
+
+		// FIXME:size = 0;
+
+		log.debug("after update outgoingmessages.size = "
+				+ outgoingMessages.size());
 	}
 
 	/**
@@ -505,7 +511,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	public void receiveMessage(List<Message> incomingMessages)
 			throws RemoteException {
 
-		log.debug("recevie incomingMessages: " + incomingMessages.size());
+		// FIXME: not triggered. error happen.
+
+		log.debug("onRecevieIncomingMessages: " + incomingMessages.size());
 		log.debug(incomingMessages.toString());
 
 		/** partitionID to message list */

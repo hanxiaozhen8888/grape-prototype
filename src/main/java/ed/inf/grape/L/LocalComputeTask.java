@@ -85,16 +85,20 @@ public class LocalComputeTask {
 
 		for (int vertex : partition.vertexSet()) {
 
-			int numOutgoingEdges = partition.outDegreeOf(vertex);
+			// FIXME: only inner nodes.
+			if (partition.isInnerVertex(vertex)) {
 
-			double updatedRank = (0.15 / numOutgoingEdges);
+				int numOutgoingEdges = partition.outDegreeOf(vertex);
 
-			for (Edge edge : partition.outgoingEdgesOf(vertex)) {
+				double updatedRank = (0.15 / numOutgoingEdges);
 
-				Message message = new Message(this.partitionID,
-						partition.getEdgeTarget(edge), updatedRank
-								/ numOutgoingEdges);
-				this.generatedMessages.add(message);
+				for (Edge edge : partition.outgoingEdgesOf(vertex)) {
+
+					Message message = new Message(this.partitionID,
+							partition.getEdgeTarget(edge), updatedRank
+									/ numOutgoingEdges);
+					this.generatedMessages.add(message);
+				}
 			}
 		}
 	}

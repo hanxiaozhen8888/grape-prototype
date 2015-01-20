@@ -1,4 +1,4 @@
-package ed.inf.grape.L;
+package ed.inf.grape.client;
 
 import java.util.ArrayList;
 import java.util.List;
