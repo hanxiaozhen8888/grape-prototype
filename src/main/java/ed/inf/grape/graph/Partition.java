@@ -33,11 +33,7 @@ public class Partition extends DefaultDirectedWeightedGraph<Integer, Edge>
 		return partitionID;
 	}
 
-	public boolean addVertex(Integer vertex) {
-		return this.addVertex(vertex);
-	}
-
-	public Edge addEdge(Integer sourceVertex, Integer targetVertex) {
+	public Edge addEdgeWith2Endpoints(Integer sourceVertex, Integer targetVertex) {
 
 		if (!this.containsVertex(sourceVertex)) {
 			this.addVertex(sourceVertex);

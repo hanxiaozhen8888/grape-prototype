@@ -187,15 +187,12 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 						+ String.valueOf(partitionID);
 
 				Partition partition;
-				try {
-					partition = IO.loadPartitions(partitionID, filename);
-					this.partitions.put(partitionID, partition);
-				} catch (IOException e) {
-					log.error("load partition file failed.");
-					e.printStackTrace();
-				}
+				partition = IO.loadPartitions(partitionID, filename);
+				this.partitions.put(partitionID, partition);
 			}
 		}
+
+		log.debug(Dev.currentRuntimeState());
 
 	}
 
@@ -208,14 +205,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 					+ String.valueOf(partitionID);
 
 			Partition partition;
-			try {
-				partition = IO.loadPartitions(partitionID, filename);
-				this.partitions.put(partitionID, partition);
-			} catch (IOException e) {
-				log.error("load partition file failed.");
-				e.printStackTrace();
-			}
+			partition = IO.loadPartitions(partitionID, filename);
+			this.partitions.put(partitionID, partition);
 		}
+
+		log.debug(Dev.currentRuntimeState());
 
 	}
 
@@ -289,6 +283,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 										.getMessages());
 							}
 						}
+
+						localComputeTask.prepareForNextCompute();
 
 						nextLocalComputeTasksQueue.add(localComputeTask);
 						checkAndSendMessage();
@@ -393,21 +389,29 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		int partitionID = -1;
 		List<Message> workerMessages = null;
 		for (Message message : messagesFromCompute) {
+
 			vertexID = message.getDestinationVertexID();
-			partitionID = mapVertexIdToPartitionId.get(vertexID);
-			workerID = mapPartitionIdToWorkerId.get(partitionID);
-			if (workerID.equals(this.workerID)) {
 
-				/** send message to self. */
-				updateIncomingMessages(partitionID, message);
+			if (!mapVertexIdToPartitionId.containsKey(vertexID)) {
+
+				/** inner nodes not contained in the map. */
+				updateIncomingMessages(message.getSourcePartitionID(), message);
 			} else {
+				partitionID = mapVertexIdToPartitionId.get(vertexID);
+				workerID = mapPartitionIdToWorkerId.get(partitionID);
+				if (workerID.equals(this.workerID)) {
 
-				if (outgoingMessages.containsKey(workerID)) {
-					outgoingMessages.get(workerID).add(message);
+					/** send message to self. only multiple threads valid */
+					updateIncomingMessages(partitionID, message);
 				} else {
-					workerMessages = new ArrayList<Message>();
-					workerMessages.add(message);
-					outgoingMessages.put(workerID, workerMessages);
+
+					if (outgoingMessages.containsKey(workerID)) {
+						outgoingMessages.get(workerID).add(message);
+					} else {
+						workerMessages = new ArrayList<Message>();
+						workerMessages.add(message);
+						outgoingMessages.put(workerID, workerMessages);
+					}
 				}
 			}
 		}
@@ -595,8 +599,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 		log.info("Get query:" + query.toString());
 
-		for (int i = 0; i < this.partitions.size(); i++) {
-			LocalComputeTask localComputeTask = new LocalComputeTask(query, i);
+		for (Entry<Integer, Partition> entry : this.partitions.entrySet()) {
+			LocalComputeTask localComputeTask = new LocalComputeTask(query,
+					entry.getKey());
 			this.nextLocalComputeTasksQueue.add(localComputeTask);
 		}
 

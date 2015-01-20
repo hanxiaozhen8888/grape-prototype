@@ -8,6 +8,8 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import ed.inf.grape.util.IO;
+
 public class Result implements Serializable {
 
 	private static final long serialVersionUID = -2747898136416052009L;
@@ -30,12 +32,13 @@ public class Result implements Serializable {
 
 		/** add how to assemble a final result from results */
 		log.debug("write result to file: " + filename);
+
+		IO.writeMapToFile(ranks, filename);
 	}
-	
-	
-	public Map<Integer,Double> ranks;
-	
-	public Result(){
+
+	public Map<Integer, Double> ranks;
+
+	public Result() {
 		ranks = new HashMap<Integer, Double>();
 	}
 }

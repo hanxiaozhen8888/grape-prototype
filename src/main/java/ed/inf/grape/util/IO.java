@@ -1,13 +1,17 @@
 package ed.inf.grape.util;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -62,7 +66,7 @@ public class IO {
 	// }
 
 	static public Partition loadPartitions(final int partitionID,
-			final String partitionFilename) throws IOException {
+			final String partitionFilename) {
 
 		/**
 		 * Load partition from file. (maybe partitioned by Metis, etc.). Each
@@ -81,64 +85,74 @@ public class IO {
 		Partition partition = new Partition(partitionID);
 
 		/** load vertices */
-		fileInputStream = new FileInputStream(partitionFilename + ".v");
-		sc = new Scanner(fileInputStream, "UTF-8");
-		while (sc.hasNextLine()) {
-			String line = sc.nextLine();
-			String[] nodes = line.split("\t");
-			int vsource = Integer.parseInt(nodes[0]);
-			String label = nodes[1];
+		try {
+			fileInputStream = new FileInputStream(partitionFilename + ".v");
 
-			partition.addVertex(vsource);
-			// TODO: add labels
-			// notice: virtual nodes may not have label
-		}
+			sc = new Scanner(fileInputStream, "UTF-8");
+			while (sc.hasNextLine()) {
+				String line = sc.nextLine();
+				String[] nodes = line.split("\t");
+				int vsource = Integer.parseInt(nodes[0].trim());
+				String label = nodes[1];
 
-		if (fileInputStream != null) {
-			fileInputStream.close();
-		}
-		if (sc != null) {
-			sc.close();
-		}
-
-		log.debug("load vertex finished.");
-
-		/** load edges */
-		fileInputStream = new FileInputStream(partitionFilename + ".e");
-		sc = new Scanner(fileInputStream, "UTF-8");
-		int lc = 0;
-		while (sc.hasNextLine()) {
-
-			if (lc % 100000 == 0) {
-				log.debug("load line " + lc);
+				partition.addVertex(vsource);
+				// TODO: add labels
+				// notice: virtual nodes may not have label
 			}
 
-			String[] line = sc.nextLine().split("-");
-
-			int source = Integer.parseInt(line[1]);
-			int target = Integer.parseInt(line[2]);
-
-			partition.addEdge(source, target);
-
-			if (line[0].equals(Edge.TYPE_INCOMING)) {
-				partition.addIncomingVertex(source);
+			if (fileInputStream != null) {
+				fileInputStream.close();
+			}
+			if (sc != null) {
+				sc.close();
 			}
 
-			else if (line[0].equals(Edge.TYPE_OUTGOING)) {
-				partition.addOutgoingVertex(target);
+			log.debug("load vertex finished.");
+
+			/** load edges */
+			fileInputStream = new FileInputStream(partitionFilename + ".e");
+			sc = new Scanner(fileInputStream, "UTF-8");
+			int lc = 0;
+			while (sc.hasNextLine()) {
+
+				if (lc % 100000 == 0) {
+					log.debug("load line " + lc);
+				}
+
+				String[] line = sc.nextLine().split("-");
+
+				int source = Integer.parseInt(line[1].trim());
+				int target = Integer.parseInt(line[2].trim());
+
+				partition.addEdgeWith2Endpoints(source, target);
+
+				if (line[0].equals(Edge.TYPE_INCOMING)) {
+					partition.addIncomingVertex(source);
+				}
+
+				else if (line[0].equals(Edge.TYPE_OUTGOING)) {
+					partition.addOutgoingVertex(target);
+				}
+				lc++;
 			}
-			lc++;
-		}
 
-		if (fileInputStream != null) {
-			fileInputStream.close();
-		}
-		if (sc != null) {
-			sc.close();
-		}
+			if (fileInputStream != null) {
+				fileInputStream.close();
+			}
+			if (sc != null) {
+				sc.close();
+			}
 
-		log.info("graph partition loaded." + partition.getPartitionInfo()
-				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
+			log.info("graph partition loaded." + partition.getPartitionInfo()
+					+ ", using " + (System.currentTimeMillis() - startTime)
+					+ " ms");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		return partition;
 	}
@@ -217,6 +231,31 @@ public class IO {
 				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
 
 		return retMap;
+	}
+
+	static public <K, V> void writeMapToFile(Map<K, V> map, String filename) {
+
+		log.info("writing map to " + filename + "");
+
+		long startTime = System.currentTimeMillis();
+
+		PrintWriter writer;
+		try {
+			writer = new PrintWriter(filename, "UTF-8");
+
+			for (Entry<K, V> entry : map.entrySet()) {
+				writer.println(entry.getKey() + "\t" + entry.getValue());
+			}
+
+			writer.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		}
+
+		log.info(filename + " write to file. map size =  " + map.size()
+				+ ", using " + (System.currentTimeMillis() - startTime) + " ms");
 	}
 
 	public static boolean serialize(String filePath, Object obj) {
