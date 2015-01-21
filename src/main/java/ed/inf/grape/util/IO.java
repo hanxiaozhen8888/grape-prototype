@@ -171,7 +171,7 @@ public class IO {
 
 		fileInputStream = new FileInputStream(filename);
 		sc = new Scanner(fileInputStream, "UTF-8");
-		while (sc.hasNextLine()) {
+		while (sc.hasNextInt()) {
 
 			int key = sc.nextInt();
 			int value = sc.nextInt();

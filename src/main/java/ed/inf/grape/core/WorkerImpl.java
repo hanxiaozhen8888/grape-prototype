@@ -1,6 +1,5 @@
 package ed.inf.grape.core;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
@@ -18,7 +17,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -29,9 +27,9 @@ import ed.inf.grape.L.LocalComputeTask;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
-import ed.inf.grape.util.KV;
 import ed.inf.grape.util.Dev;
 import ed.inf.grape.util.IO;
+import ed.inf.grape.util.KV;
 
 /**
  * Represents the computation node.
@@ -72,7 +70,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	private Worker2Coordinator coordinatorProxy;
 
 	/** VertexID 2 PartitionID Map */
-	private Map<String, Integer> mapVertexIdToPartitionId;
+	private Map<Integer, Integer> mapVertexIdToPartitionId;
 
 	/** PartitionID to WorkerID Map. */
 	private Map<Integer, String> mapPartitionIdToWorkerId;
@@ -113,7 +111,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	public WorkerImpl() throws RemoteException {
 		InetAddress address = null;
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-				"yyyyMMdd.HHmmss.SSS");
+				"MMdd.HHmmss.SSS");
 		String timestamp = simpleDateFormat.format(new Date());
 
 		String hostName = new String();
@@ -138,6 +136,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		for (int i = 0; i < numThreads; i++) {
 			log.debug("Starting Thread " + (i + 1));
 			WorkerThread workerThread = new WorkerThread();
+			workerThread.setName(this.workerID + "_th" + i);
 			workerThread.start();
 		}
 	}
@@ -384,22 +383,34 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	private void updateOutgoingMessages(List<Message> messagesFromCompute) {
 		log.debug("updateOutgoingMessages");
 
+		log.debug("total message size = " + messagesFromCompute.size());
+		log.debug("mapvertexID2PartitionId size = "
+				+ mapVertexIdToPartitionId.size());
+		log.debug(mapVertexIdToPartitionId.toString());
+
 		String workerID = null;
 		int vertexID = -1;
 		int partitionID = -1;
 		List<Message> workerMessages = null;
-		
+
 		for (Message message : messagesFromCompute) {
-			
+
+			log.debug(message.toString());
+
 			vertexID = message.getDestinationVertexID();
 
 			if (!mapVertexIdToPartitionId.containsKey(vertexID)) {
-
 				/** inner nodes not contained in the map. */
 				updateIncomingMessages(message.getSourcePartitionID(), message);
 			} else {
+
 				partitionID = mapVertexIdToPartitionId.get(vertexID);
 				workerID = mapPartitionIdToWorkerId.get(partitionID);
+
+				log.debug("partitionID=" + partitionID + ", workerID="
+						+ workerID);
+				log.debug("thiswordID = " + this.workerID);
+
 				if (workerID.equals(this.workerID)) {
 
 					/** send message to self. only multiple threads valid */
@@ -407,8 +418,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				} else {
 
 					if (outgoingMessages.containsKey(workerID)) {
+						log.debug("if");
 						outgoingMessages.get(workerID).add(message);
 					} else {
+						log.debug("else");
+
 						workerMessages = new ArrayList<Message>();
 						workerMessages.add(message);
 						outgoingMessages.put(workerID, workerMessages);
@@ -444,7 +458,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 *             the remote exception
 	 */
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
-			Map<String, Integer> mapVertexIdToPartitionId,
+			Map<Integer, Integer> mapVertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId,
 			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException {
 		log.info("WorkerImpl: setWorkerPartitionInfo");
@@ -526,7 +540,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			vertexID = message.getDestinationVertexID();
 			partitionID = mapVertexIdToPartitionId.get(vertexID);
 			if (currentIncomingMessages.containsKey(partitionID)) {
-				currentIncomingMessages.get(vertexID).add(message);
+				currentIncomingMessages.get(partitionID).add(message);
 			} else {
 				partitionMessages = new ArrayList<Message>();
 				partitionMessages.add(message);

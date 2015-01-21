@@ -206,10 +206,10 @@ public class Partitioner {
 		return ret;
 	}
 
-	public Map<String, Integer> getVirtualVertex2PartitionMap() {
+	public Map<Integer, Integer> getVirtualVertex2PartitionMap() {
 
 		try {
-			return IO.loadString2IntMapFromFile(GRAPH_FILE_PATH + ".vvp");
+			return IO.loadInt2IntMapFromFile(GRAPH_FILE_PATH + ".vvp");
 		} catch (IOException e) {
 			log.error("load virtual vertex 2 partition map failed.");
 			e.printStackTrace();

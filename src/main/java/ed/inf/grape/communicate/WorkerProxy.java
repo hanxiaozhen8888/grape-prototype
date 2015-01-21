@@ -219,7 +219,7 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 *             the remote exception
 	 */
 	public void setWorkerPartitionInfo(
-			Map<String, Integer> vertexIdToPartitionId,
+			Map<Integer, Integer> vertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId,
 			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException {
 		worker.setWorkerPartitionInfo(totalPartitions, vertexIdToPartitionId,

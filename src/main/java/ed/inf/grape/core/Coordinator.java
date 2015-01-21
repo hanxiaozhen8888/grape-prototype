@@ -58,7 +58,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	private Map<Integer, String> partitionWorkerMap;
 
 	/** The virtual vertexID to partitionID map. */
-	private Map<String, Integer> virtualVertexPartitionMap;
+	private Map<Integer, Integer> virtualVertexPartitionMap;
 
 	/** Set of Workers maintained for acknowledgement. */
 	private Set<String> workerAcknowledgementSet = new HashSet<String>();

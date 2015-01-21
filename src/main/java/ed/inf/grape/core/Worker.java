@@ -30,7 +30,7 @@ public interface Worker extends Remote {
 			throws RemoteException;
 
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
-			Map<String, Integer> mapVertexIdToPartitionId,
+			Map<Integer, Integer> mapVertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId,
 			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException;
 
