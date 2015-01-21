@@ -41,32 +41,25 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 	private static final long serialVersionUID = 8653095027537771705L;
 
-	/** The num threads. */
+	/** The number of threads. */
 	private int numThreads;
 
 	/** The total partitions assigned. */
 	private int totalPartitionsAssigned;
 
-	/**
-	 * boolean variable to determine if a Worker can send messages to other
-	 * Workers and to Master. It is set to true when a Worker is sending
-	 * messages to other Workers.
-	 */
-	private boolean stopSendingMessage;
-
-	/** The queue of partitions in the current superstep. */
+	/** The queue of partitions in the current super step. */
 	private BlockingQueue<LocalComputeTask> currentLocalComputeTaskQueue;
 
-	/** The queue of partitions in the next superstep. */
+	/** The queue of partitions in the next super step. */
 	private BlockingQueue<LocalComputeTask> nextLocalComputeTasksQueue;
 
 	/** hosting partitions */
 	private Map<Integer, Partition> partitions;
 
-	/** Hostname of the node with timestamp information. */
+	/** Host name of the node with time stamp information. */
 	private String workerID;
 
-	/** Master Proxy object to interact with Master. */
+	/** Coordinator Proxy object to interact with Master. */
 	private Worker2Coordinator coordinatorProxy;
 
 	/** VertexID 2 PartitionID Map */
@@ -87,15 +80,17 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** partitionId to Current Incoming messages - used in next Super Step. */
 	private ConcurrentHashMap<Integer, List<Message>> currentIncomingMessages;
 
-	/** Query */
-	private Query query;
-
 	/**
 	 * boolean variable indicating whether the partitions can be worked upon by
-	 * the workers in each superstep.
+	 * the workers in each super step.
 	 **/
 	private boolean flagLocalCompute = false;
-	private boolean flagSendMessage = false;
+	/**
+	 * boolean variable to determine if a Worker can send messages to other
+	 * Workers and to Master. It is set to true when a Worker is sending
+	 * messages to other Workers.
+	 */
+	private boolean stopSendingMessage;
 
 	/** The super step counter. */
 	private long superstep = 0;
@@ -239,17 +234,14 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		public void run() {
 			while (true) {
 				try {
-					Thread.sleep(500);
+					Thread.sleep(100);
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
 				while (flagLocalCompute) {
-					log.debug(this + "Superstep loop started for superstep "
+					log.debug(this + "Superstep loop start for superstep "
 							+ superstep);
 					try {
-
-						// startSuperStep = false;
-						// checkAndSendMessage();
 
 						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue
 								.take();
@@ -257,6 +249,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 								.get(localComputeTask.getPartitionID());
 
 						if (superstep == 0) {
+
 							/** begin step. initial compute */
 							localComputeTask.compute(workingPartition);
 							updateOutgoingMessages(localComputeTask
@@ -264,15 +257,12 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 						}
 
 						else {
+
 							/** not begin step. incremental compute */
 							List<Message> messageForWorkingPartition = previousIncomingMessages
 									.get(localComputeTask.getPartitionID());
 
 							if (messageForWorkingPartition != null) {
-
-								// TODO: since we record messages mapped to
-								// vertex. it is possible to compute on
-								// central of vertex.
 
 								localComputeTask.incrementalCompute(
 										workingPartition,
@@ -383,11 +373,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	private void updateOutgoingMessages(List<Message> messagesFromCompute) {
 		log.debug("updateOutgoingMessages");
 
-		log.debug("total message size = " + messagesFromCompute.size());
-		log.debug("mapvertexID2PartitionId size = "
-				+ mapVertexIdToPartitionId.size());
-		log.debug(mapVertexIdToPartitionId.toString());
-
 		String workerID = null;
 		int vertexID = -1;
 		int partitionID = -1;
@@ -407,10 +392,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				partitionID = mapVertexIdToPartitionId.get(vertexID);
 				workerID = mapPartitionIdToWorkerId.get(partitionID);
 
-				log.debug("partitionID=" + partitionID + ", workerID="
-						+ workerID);
-				log.debug("thiswordID = " + this.workerID);
-
 				if (workerID.equals(this.workerID)) {
 
 					/** send message to self. only multiple threads valid */
@@ -418,11 +399,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				} else {
 
 					if (outgoingMessages.containsKey(workerID)) {
-						log.debug("if");
 						outgoingMessages.get(workerID).add(message);
 					} else {
-						log.debug("else");
-
 						workerMessages = new ArrayList<Message>();
 						workerMessages.add(message);
 						outgoingMessages.put(workerID, workerMessages);
@@ -430,11 +408,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				}
 			}
 		}
-
-		// FIXME:size = 0;
-
-		log.debug("after update outgoingmessages.size = "
-				+ outgoingMessages.size());
 	}
 
 	/**
@@ -442,20 +415,13 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * 
 	 * @param totalPartitionsAssigned
 	 *            the total partitions assigned
+	 * @param mapVertexIdToPartitionId
+	 *            the map vertex id to partition id
 	 * @param mapPartitionIdToWorkerId
-	 *            the map partition id to worker id
+	 *            the map partition id id to worker id
 	 * @param mapWorkerIdToWorker
 	 *            the map worker id to worker
 	 * @throws RemoteException
-	 * 
-	 * @param totalPartitionsAssigned
-	 *            the total partitions assigned
-	 * @param mapPartitionIdToWorkerId
-	 *            the map partition id to worker id
-	 * @param mapWorkerIdToWorker
-	 *            the map worker id to worker
-	 * @throws RemoteException
-	 *             the remote exception
 	 */
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
 			Map<Integer, Integer> mapVertexIdToPartitionId,
@@ -525,10 +491,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	public void receiveMessage(List<Message> incomingMessages)
 			throws RemoteException {
 
-		// FIXME: not triggered. error happen.
-
-		log.debug("onRecevieIncomingMessages: " + incomingMessages.size());
-		log.debug(incomingMessages.toString());
+		// log.debug("onRecevieIncomingMessages: " + incomingMessages.size());
+		// log.debug(incomingMessages.toString());
 
 		/** partitionID to message list */
 		List<Message> partitionMessages = null;
@@ -613,11 +577,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 	@Override
 	public void setQuery(Query query) throws RemoteException {
+
 		/**
 		 * Get distributed query from coordinator. and instantiate local compute
 		 * tasks.
 		 * */
-		this.query = query;
 
 		log.info("Get query:" + query.toString());
 
