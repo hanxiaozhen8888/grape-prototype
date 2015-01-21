@@ -2,7 +2,7 @@ package ed.inf.grape.core;
 
 import java.io.Serializable;
 
-public class Message implements Serializable {
+public class Message<T> implements Serializable {
 
 	private static final long serialVersionUID = -6215563083195145662L;
 
@@ -10,13 +10,13 @@ public class Message implements Serializable {
 
 	private int destinationVertexID;
 
-	private Double content;
+	private T content;
 
-	public Message(int fromPartitionID, int destination, Double message) {
+	public Message(int fromPartitionID, int destination, T content) {
 		super();
 		this.sourcePartitionID = fromPartitionID;
 		this.destinationVertexID = destination;
-		this.content = message;
+		this.content = content;
 	}
 
 	public int getSourcePartitionID() {
@@ -27,7 +27,7 @@ public class Message implements Serializable {
 		return this.destinationVertexID;
 	}
 
-	public Double getContent() {
+	public T getContent() {
 		return this.content;
 	}
 

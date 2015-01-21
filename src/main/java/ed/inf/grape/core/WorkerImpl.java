@@ -74,6 +74,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** Worker to Outgoing Messages Map. */
 	private ConcurrentHashMap<String, List<Message>> outgoingMessages;
 
+	/** PartitionID to Outgoing Results Map. */
+	private ConcurrentHashMap<Integer, Result> partialResults;
+
 	/** partitionId to Previous Incoming messages - Used in current Super Step. */
 	private ConcurrentHashMap<Integer, List<Message>> previousIncomingMessages;
 
@@ -91,6 +94,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * messages to other Workers.
 	 */
 	private boolean stopSendingMessage;
+
+	private boolean flagLastStep = false;
 
 	/** The super step counter. */
 	private long superstep = 0;
@@ -123,6 +128,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		this.currentLocalComputeTaskQueue = new LinkedBlockingDeque<LocalComputeTask>();
 		this.nextLocalComputeTasksQueue = new LinkedBlockingQueue<LocalComputeTask>();
 		this.currentIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
+		this.partialResults = new ConcurrentHashMap<Integer, Result>();
 		this.previousIncomingMessages = new ConcurrentHashMap<Integer, List<Message>>();
 		this.outgoingMessages = new ConcurrentHashMap<String, List<Message>>();
 		this.numThreads = Math.min(Runtime.getRuntime().availableProcessors(),
@@ -238,42 +244,56 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				} catch (InterruptedException e1) {
 					e1.printStackTrace();
 				}
-				while (flagLocalCompute) {
+				while (flagLocalCompute || flagLastStep) {
 					log.debug(this + "Superstep loop start for superstep "
-							+ superstep);
+							+ superstep, "laststep = " + flagLastStep);
 					try {
 
 						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue
 								.take();
+
 						Partition workingPartition = partitions
 								.get(localComputeTask.getPartitionID());
 
-						if (superstep == 0) {
+						if (flagLastStep) {
 
-							/** begin step. initial compute */
-							localComputeTask.compute(workingPartition);
-							updateOutgoingMessages(localComputeTask
-									.getMessages());
+							localComputeTask.getResult().writeToFile(
+									workerID + ".rlt");
+
+							partialResults.put(
+									localComputeTask.getPartitionID(),
+									localComputeTask.getResult());
 						}
 
 						else {
 
-							/** not begin step. incremental compute */
-							List<Message> messageForWorkingPartition = previousIncomingMessages
-									.get(localComputeTask.getPartitionID());
+							if (superstep == 0) {
 
-							if (messageForWorkingPartition != null) {
-
-								localComputeTask.incrementalCompute(
-										workingPartition,
-										messageForWorkingPartition);
-
+								/** begin step. initial compute */
+								localComputeTask.compute(workingPartition);
 								updateOutgoingMessages(localComputeTask
 										.getMessages());
 							}
-						}
 
-						localComputeTask.prepareForNextCompute();
+							else {
+
+								/** not begin step. incremental compute */
+								List<Message> messageForWorkingPartition = previousIncomingMessages
+										.get(localComputeTask.getPartitionID());
+
+								if (messageForWorkingPartition != null) {
+
+									localComputeTask.incrementalCompute(
+											workingPartition,
+											messageForWorkingPartition);
+
+									updateOutgoingMessages(localComputeTask
+											.getMessages());
+								}
+							}
+
+							localComputeTask.prepareForNextCompute();
+						}
 
 						nextLocalComputeTasksQueue.add(localComputeTask);
 						checkAndSendMessage();
@@ -291,49 +311,66 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		 * @throws RemoteException
 		 */
 		private synchronized void checkAndSendMessage() {
-			log.debug("checkAndSendMessage");
 
+			log.debug("checkAndSendMessage");
 			if (!stopSendingMessage
 					&& (nextLocalComputeTasksQueue.size() == totalPartitionsAssigned)) {
 				stopSendingMessage = true;
-				log.debug(this + " WorkerImpl: Superstep " + superstep
-						+ " completed.");
 
-				flagLocalCompute = false;
+				if (flagLastStep) {
 
-				for (Entry<String, List<Message>> entry : outgoingMessages
-						.entrySet()) {
+					log.debug(this + "send partital result");
+
+					flagLastStep = false;
+
 					try {
-						worker2WorkerProxy.sendMessage(entry.getKey(),
-								entry.getValue());
+						coordinatorProxy.sendPartialResult(workerID,
+								partialResults);
 					} catch (RemoteException e) {
-						System.out.println("Can't send message to Worker "
-								+ entry.getKey() + " which is down");
+						e.printStackTrace();
 					}
 				}
 
-				// This worker will be active only if it has some messages
-				// queued up in the next superstep.
-				// activeWorkerSet will have all the workers who will be active
-				// in the next superstep.
-				Set<String> activeWorkerSet = new HashSet<String>();
-				activeWorkerSet.addAll(outgoingMessages.keySet());
-				if (currentIncomingMessages.size() > 0) {
-					activeWorkerSet.add(workerID);
-				}
-				// Send a message to the Master saying that this superstep has
-				// been completed.
-				try {
-					coordinatorProxy.localComputeCompleted(workerID,
-							activeWorkerSet);
-				} catch (RemoteException e) {
-					e.printStackTrace();
+				else {
+
+					log.debug(this + " WorkerImpl: Superstep " + superstep
+							+ " completed.");
+
+					flagLocalCompute = false;
+
+					for (Entry<String, List<Message>> entry : outgoingMessages
+							.entrySet()) {
+						try {
+							worker2WorkerProxy.sendMessage(entry.getKey(),
+									entry.getValue());
+						} catch (RemoteException e) {
+							System.out.println("Can't send message to Worker "
+									+ entry.getKey() + " which is down");
+						}
+					}
+
+					// This worker will be active only if it has some messages
+					// queued up in the next superstep.
+					// activeWorkerSet will have all the workers who will be
+					// active
+					// in the next superstep.
+					Set<String> activeWorkerSet = new HashSet<String>();
+					activeWorkerSet.addAll(outgoingMessages.keySet());
+					if (currentIncomingMessages.size() > 0) {
+						activeWorkerSet.add(workerID);
+					}
+					// Send a message to the Master saying that this superstep
+					// has
+					// been completed.
+					try {
+						coordinatorProxy.localComputeCompleted(workerID,
+								activeWorkerSet);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
 				}
 
 			}
-			// System.out.println(this + " after sendMessage check " +
-			// sendingMessage);
-
 		}
 	}
 
@@ -593,6 +630,21 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 		log.info("Instantiate " + this.nextLocalComputeTasksQueue.size()
 				+ " local task.");
+
+	}
+
+	@Override
+	public void processPartialResult() throws RemoteException {
+
+		log.debug("processPartialResult.");
+
+		BlockingQueue<LocalComputeTask> temp = new LinkedBlockingDeque<LocalComputeTask>(
+				nextLocalComputeTasksQueue);
+		this.nextLocalComputeTasksQueue.clear();
+		this.currentLocalComputeTaskQueue.addAll(temp);
+
+		this.flagLastStep = true;
+		this.stopSendingMessage = false;
 
 	}
 }

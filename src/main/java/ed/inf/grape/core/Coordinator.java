@@ -12,10 +12,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.logging.log4j.LogManager;
@@ -25,7 +24,6 @@ import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
 import ed.inf.grape.graph.Partition;
-import ed.inf.grape.util.Config;
 import ed.inf.grape.util.KV;
 
 /**
@@ -66,6 +64,9 @@ public class Coordinator extends UnicastRemoteObject implements
 	/** Set of workers who will be active in the next super step. */
 	private Set<String> activeWorkerSet = new HashSet<String>();
 
+	/** Set of partial results. partitionID to Results **/
+	private Map<Integer, Result> resultMap = new HashMap<Integer, Result>();
+
 	/** The start time. */
 	long startTime;
 
@@ -73,9 +74,6 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	/** Partition manager. */
 	private Partitioner partitioner;
-
-	/** The result queue. */
-	private BlockingQueue<String> resultQueue = new LinkedBlockingDeque<String>();
 
 	static Logger log = LogManager.getLogger(Coordinator.class);
 
@@ -568,7 +566,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		}
 	}
 
-	public void finishLocalCompute() {
+	public void finishLocalCompute() throws RemoteException {
 
 		/**
 		 * TODO: send flag to coordinator. the coordinator determined the next
@@ -578,8 +576,39 @@ public class Coordinator extends UnicastRemoteObject implements
 		 * write results to file.
 		 */
 
+		log.debug("Coordinator: fiishLocalCompute");
+
+		this.resultMap.clear();
+
+		this.workerAcknowledgementSet.clear();
+		this.workerAcknowledgementSet.addAll(this.workerProxyMap.keySet());
+
+		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
+			WorkerProxy workerProxy = entry.getValue();
+			workerProxy.processPartialResult();
+		}
+
 		log.info("finish local compute. with round = " + superstep);
 
+	}
+
+	public Result assembleResults(String workerID,
+			Map<Integer, Result> mapPartitionID2Result) {
+		log.info("assemble a final result");
+
+		for (Entry<Integer, Result> entry : mapPartitionID2Result.entrySet()) {
+			resultMap.put(entry.getKey(), entry.getValue());
+		}
+
+		this.workerAcknowledgementSet.remove(workerID);
+
+		if (this.workerAcknowledgementSet.size() == 0) {
+			log.debug(mapPartitionID2Result);
+
+			// TODO: assemble partition results
+		}
+
+		return null;
 	}
 
 	@Override
@@ -589,6 +618,13 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	@Override
 	public void postProcess() throws RemoteException {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void sendPartialResult(String workerID,
+			Map<Integer, Result> mapPartitionID2Result) throws RemoteException {
 		// TODO Auto-generated method stub
 
 	}

@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import ed.inf.grape.core.Coordinator;
 import ed.inf.grape.core.Query;
+import ed.inf.grape.core.Result;
 import ed.inf.grape.core.Worker;
 import ed.inf.grape.graph.Partition;
 
@@ -99,12 +100,10 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 			} catch (RemoteException e) {
 				log.fatal("Remote Exception received from the Worker "
 						+ workerID);
-
 				log.info("RemoteException: Removing Worker from Master");
 				coordinator.removeWorker(workerID);
 			} catch (InterruptedException e) {
 				log.fatal("Thread interrupted");
-
 				log.info("InterruptedException: Removing Worker from Master");
 				coordinator.removeWorker(workerID);
 			}
@@ -256,48 +255,8 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 */
 	public Worker2Coordinator register(Worker worker, String workerID,
 			int numWorkerThreads) throws RemoteException {
-
 		return null;
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see system.Worker2Master#superStepCompleted(java.lang.String,
-	 * java.util.Set)
-	 */
-	// @Override
-	// public void superStepCompleted(String workerID, Set<String>
-	// activeWorkerSet)
-	// throws RemoteException {
-	// master.superStepCompleted(workerID, activeWorkerSet);
-	// }
-
-	/**
-	 * Start super step.
-	 * 
-	 * @param superStepCounter
-	 *            the super step counter
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// public void startSuperStep(long superStepCounter) throws RemoteException
-	// {
-	// this.worker.startSuperStep(superStepCounter);
-	// }
-	/**
-	 * Sets the initial message for the Worker that has the source vertex.
-	 * 
-	 * @param initialMessage
-	 *            the initial message
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// public void setInitialMessage(
-	// ConcurrentHashMap<Integer, Map<VertexID, List<Message>>> initialMessage)
-	// throws RemoteException {
-	// this.worker.setInitialMessage(initialMessage);
-	// }
 
 	/**
 	 * Restore initial state.
@@ -305,62 +264,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	private void restoreInitialState() {
 		this.totalPartitions = 0;
 	}
-
-	/**
-	 * Heart beat.
-	 * 
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// public void sendHeartBeat() throws RemoteException {
-	// this.worker.sendHeartBeat();
-	// }
-
-	/**
-	 * Check point.
-	 * 
-	 * @throws Exception
-	 *             the exception
-	 */
-	// public void checkPoint(long superstep) throws Exception {
-	// this.worker.checkPoint(superstep);
-	// }
-
-	/**
-	 * Start recovery.
-	 * 
-	 * @throws Exception
-	 *             the exception
-	 */
-	// public void startRecovery() throws Exception {
-	// worker.startRecovery();
-	// }
-
-	/**
-	 * Finish recovery.
-	 * 
-	 * @throws Exception
-	 *             the exception
-	 */
-	// public void finishRecovery() throws Exception {
-	// worker.finishRecovery();
-	// }
-
-	/**
-	 * Adds the recovered data.
-	 * 
-	 * @param partition
-	 *            the partition
-	 * @param messages
-	 *            the messages
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	// public void addRecoveredData(Partition partition,
-	// Map<VertexID, List<Message>> messages) throws RemoteException {
-	// this.totalPartitions += 1;
-	// this.worker.addRecoveredData(partition, messages);
-	// }
 
 	/**
 	 * Shutdowns the worker and exits
@@ -383,4 +286,13 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		this.worker.nextLocalCompute(superstep);
 	}
 
+	public void processPartialResult() throws RemoteException {
+		this.worker.processPartialResult();
+	}
+
+	@Override
+	public void sendPartialResult(String workerID,
+			Map<Integer, Result> mapPartitionID2Result) throws RemoteException {
+		this.coordinator.assembleResults(workerID,mapPartitionID2Result);
+	}
 }

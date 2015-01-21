@@ -47,11 +47,10 @@ public class LocalComputeTask {
 		/**
 		 * Clear messages. for the next compute.s
 		 * */
-
 		this.generatedMessages.clear();
 		this.superstep++;
 	}
-
+	
 	public int getPartitionID() {
 		return this.partitionID;
 	}
@@ -94,9 +93,9 @@ public class LocalComputeTask {
 
 				for (Edge edge : partition.outgoingEdgesOf(vertex)) {
 
-					Message message = new Message(this.partitionID,
-							partition.getEdgeTarget(edge), updatedRank
-									/ numOutgoingEdges);
+					Message<Double> message = new Message<Double>(
+							this.partitionID, partition.getEdgeTarget(edge),
+							updatedRank / numOutgoingEdges);
 					this.generatedMessages.add(message);
 				}
 			}
@@ -118,10 +117,10 @@ public class LocalComputeTask {
 		log.debug("incommingMessages.size = " + incomingMessages.size());
 
 		Map<Integer, Double> aggregateByVertex = new HashMap<Integer, Double>();
-		for (Message m : incomingMessages) {
-			
+		for (Message<Double> m : incomingMessages) {
+
 			double oldv = 0.0;
-			if(aggregateByVertex.containsKey(m.getDestinationVertexID())){
+			if (aggregateByVertex.containsKey(m.getDestinationVertexID())) {
 				oldv = aggregateByVertex.get(m.getDestinationVertexID());
 			}
 			aggregateByVertex.put(m.getDestinationVertexID(),
@@ -149,14 +148,9 @@ public class LocalComputeTask {
 							partition.getEdgeTarget(edge), updatedRank
 									/ numOutgoingEdges);
 					this.generatedMessages.add(message);
-
 				}
-			} else {
-				// volt to halt
-				String filename = "p" + this.partitionID + ".rlt";
-				this.generatedResult.writeToFile(filename);
+
 			}
 		}
-
 	}
 }
