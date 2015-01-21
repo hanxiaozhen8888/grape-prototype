@@ -119,8 +119,11 @@ public class LocalComputeTask {
 
 		Map<Integer, Double> aggregateByVertex = new HashMap<Integer, Double>();
 		for (Message m : incomingMessages) {
-			double oldv = aggregateByVertex.getOrDefault(
-					m.getDestinationVertexID(), 0.0);
+			
+			double oldv = 0.0;
+			if(aggregateByVertex.containsKey(m.getDestinationVertexID())){
+				oldv = aggregateByVertex.get(m.getDestinationVertexID());
+			}
 			aggregateByVertex.put(m.getDestinationVertexID(),
 					oldv + m.getContent());
 		}
