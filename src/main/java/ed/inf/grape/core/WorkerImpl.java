@@ -248,8 +248,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 					e1.printStackTrace();
 				}
 				while (flagLocalCompute || flagLastStep) {
-					log.debug(this + "Superstep loop start for superstep "
-							+ superstep, "laststep = " + flagLastStep);
+					log.debug(this + "superstep loop start for superstep "
+							+ superstep + "laststep = " + flagLastStep);
 					try {
 
 						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue
@@ -263,7 +263,10 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 							if (KV.ENABLE_ASSEMBLE == false) {
 
 								localComputeTask.getResult().writeToFile(
-										workerID + ".rlt");
+										workerID
+												+ localComputeTask
+														.getPartitionID()
+												+ ".rlt");
 							}
 
 							partialResults.put(
@@ -316,11 +319,19 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		 * 
 		 * @throws RemoteException
 		 */
+
 		private synchronized void checkAndSendMessage() {
 
-			log.debug("checkAndSendMessage");
-			if (!stopSendingMessage
+			log.debug("checkAndSendMessage:nextQueue="
+					+ nextLocalComputeTasksQueue.size() + ", total="
+					+ totalPartitionsAssigned);
+			if ((!stopSendingMessage)
 					&& (nextLocalComputeTasksQueue.size() == totalPartitionsAssigned)) {
+				log.debug("send!");
+				log.debug("why send?:nextQueue="
+						+ nextLocalComputeTasksQueue.size() + ", total="
+						+ totalPartitionsAssigned);
+
 				stopSendingMessage = true;
 
 				if (flagLastStep) {
@@ -330,7 +341,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 					if (KV.ENABLE_ASSEMBLE) {
 						log.debug("assemble = true. " + this
 								+ "send partital result");
-
 						try {
 							coordinatorProxy.sendPartialResult(workerID,
 									partialResults);
@@ -342,8 +352,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 				else {
 
-					log.debug(this + " WorkerImpl: Superstep " + superstep
-							+ " completed.");
+					log.debug(" Worker: Superstep " + superstep + " completed.");
 
 					flagLocalCompute = false;
 
@@ -381,6 +390,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 			}
 		}
+
 	}
 
 	/**
@@ -417,7 +427,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 *            message to be send
 	 */
 	private void updateOutgoingMessages(List<Message> messagesFromCompute) {
-		log.debug("updateOutgoingMessages");
+		log.debug("updateOutgoingMessages.size = " + messagesFromCompute.size());
 
 		String workerID = null;
 		int vertexID = -1;
@@ -425,8 +435,6 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		List<Message> workerMessages = null;
 
 		for (Message message : messagesFromCompute) {
-
-			log.debug(message.toString());
 
 			vertexID = message.getDestinationVertexID();
 

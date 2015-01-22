@@ -339,8 +339,8 @@ public class Coordinator extends UnicastRemoteObject implements
 					partitionWorkerMap.put(partitionID,
 							workerProxy.getWorkerID());
 				}
-				workerProxy.addPartitionIDList(workerPartitionIDs);
 			}
+			workerProxy.addPartitionIDList(workerPartitionIDs);
 		}
 
 		if (partitioner.hasNextPartitionID()) {

@@ -27,20 +27,25 @@ public class PageRankTask extends LocalComputeTask {
 		 */
 		log.debug("local compute.");
 
+		double initValue = 0.5;
+
 		for (int vertex : partition.vertexSet()) {
 
 			if (partition.isInnerVertex(vertex)) {
 
+				((PageRankResult) this.getResult()).ranks
+						.put(vertex, initValue);
+
 				int numOutgoingEdges = partition.outDegreeOf(vertex);
-				double updatedRank = (0.15 / numOutgoingEdges);
 				for (Edge edge : partition.outgoingEdgesOf(vertex)) {
 					Message<Double> message = new Message<Double>(
 							this.getPartitionID(),
-							partition.getEdgeTarget(edge), updatedRank
+							partition.getEdgeTarget(edge), initValue
 									/ numOutgoingEdges);
 					this.getMessages().add(message);
 				}
 			}
+
 		}
 	}
 
@@ -73,7 +78,7 @@ public class PageRankTask extends LocalComputeTask {
 		for (Entry<Integer, Double> entry : aggregateByVertex.entrySet()) {
 
 			int source = entry.getKey();
-			int numOutgoingEdges = partition.outDegreeOf(source);
+			int numOutgoingEdges = 1 + partition.outDegreeOf(source);
 
 			if (this.getSuperstep() < 10) {
 
