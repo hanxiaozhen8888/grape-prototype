@@ -31,7 +31,7 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	/** The worker. */
 	private Worker worker;
 
-	/** The master. */
+	/** The coordinator. */
 	private Coordinator coordinator;
 
 	/** The thread */
@@ -56,19 +56,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 
 	/**
 	 * Instantiates a new worker proxy.
-	 * 
-	 * @param worker
-	 *            Represents the remote {@link system.WorkerImpl Worker}
-	 * @param workerID
-	 *            Represents the unique serviceName to identify the worker
-	 * @param numWorkerThreads
-	 *            the num worker threads
-	 * @param master
-	 *            Represents the {@link system.Master Master}
-	 * @throws AccessException
-	 *             the access exception
-	 * @throws RemoteException
-	 *             the remote exception
 	 */
 
 	public WorkerProxy(Worker worker, String workerID, int numWorkerThreads,
@@ -81,14 +68,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		t = new Thread(this);
 		t.start();
 	}
-
-	/**
-	 * Represents a thread which removes {@link api.Task tasks} from a queue,
-	 * invoking the associated {@link system.Computer Computer's} execute method
-	 * with the task as its argument, and putting the returned
-	 * {@link api.Result Result} back into the {@link api.Space Space} for
-	 * retrieval by the client
-	 */
 
 	public void run() {
 		Partition partition = null;
@@ -132,9 +111,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 
 	/**
 	 * Halts the worker and prints the final solution.
-	 * 
-	 * @throws RemoteException
-	 *             the remote exception
 	 */
 	public void halt() throws RemoteException {
 		this.restoreInitialState();
@@ -229,15 +205,9 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	}
 
 	/**
-	 * Sets the worker partition info.
-	 * 
-	 * @param mapPartitionIdToWorkerId
-	 *            the map partition id to worker id
-	 * @param mapWorkerIdToWorker
-	 *            the map worker id to worker
-	 * @throws RemoteException
-	 *             the remote exception
+	 * Sets Query to
 	 */
+
 	public void setQuery(Query query) throws RemoteException {
 		worker.setQuery(query);
 	}

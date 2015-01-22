@@ -19,12 +19,7 @@ public class PageRankTask extends LocalComputeTask {
 
 	@Override
 	public void compute(Partition partition) {
-		/**
-		 * a method need to implemented by client
-		 * 
-		 * define compute, also fulfil messages and results.
-		 * 
-		 */
+
 		log.debug("local compute.");
 
 		double initValue = 0.5;
@@ -52,12 +47,7 @@ public class PageRankTask extends LocalComputeTask {
 	@Override
 	public void incrementalCompute(Partition partition,
 			List<Message> incomingMessages) {
-		/**
-		 * a method need to implemented by client
-		 * 
-		 * define compute, also fulfil messages and results.
-		 * 
-		 */
+
 		log.debug("local incremental compute.");
 		log.debug("incommingMessages.size = " + incomingMessages.size());
 

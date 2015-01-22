@@ -12,7 +12,8 @@ import ed.inf.grape.util.KV;
 public class CommunicateTest {
 
 	public static void main(String[] args) throws RemoteException,
-			NotBoundException, MalformedURLException, ClassNotFoundException {
+			NotBoundException, MalformedURLException, ClassNotFoundException,
+			InstantiationException, IllegalAccessException {
 		String masterMachineName = args[0];
 		String masterURL = "//" + masterMachineName + "/"
 				+ KV.COORDINATOR_SERVICE_NAME;
@@ -23,15 +24,18 @@ public class CommunicateTest {
 
 	/**
 	 * Run application.
+	 * 
+	 * @throws ClassNotFoundException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
 	 */
 	private static void runApplication(Client2Coordinator client2Coordinator)
-			throws RemoteException {
+			throws RemoteException, InstantiationException,
+			IllegalAccessException, ClassNotFoundException {
 
 		client2Coordinator.preProcess();
-
-		Query q = new Query();
+		Query q = (Query) Class.forName(KV.CLASS_QUERY).newInstance();
 		client2Coordinator.putTask(q);
-
 	}
 
 }
