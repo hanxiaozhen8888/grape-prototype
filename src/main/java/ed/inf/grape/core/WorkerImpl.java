@@ -314,83 +314,79 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			}
 		}
 
-		/**
-		 * Check and send message.
-		 * 
-		 * @throws RemoteException
-		 */
+	}
 
-		private synchronized void checkAndSendMessage() {
+	/**
+	 * Check and send message. Notice: this is a critical code area, which
+	 * should put outside of the thread code.
+	 * 
+	 * @throws RemoteException
+	 */
 
-			log.debug("checkAndSendMessage:nextQueue="
-					+ nextLocalComputeTasksQueue.size() + ", total="
-					+ totalPartitionsAssigned);
-			if ((!stopSendingMessage)
-					&& (nextLocalComputeTasksQueue.size() == totalPartitionsAssigned)) {
-				log.debug("send!");
-				log.debug("why send?:nextQueue="
-						+ nextLocalComputeTasksQueue.size() + ", total="
-						+ totalPartitionsAssigned);
+	private synchronized void checkAndSendMessage() {
 
-				stopSendingMessage = true;
+		log.debug("synchronized checkAndSendMessage!");
+		if ((!stopSendingMessage)
+				&& (nextLocalComputeTasksQueue.size() == totalPartitionsAssigned)) {
+			log.debug("sendMessage!");
 
-				if (flagLastStep) {
+			stopSendingMessage = true;
 
-					flagLastStep = false;
+			if (flagLastStep) {
 
-					if (KV.ENABLE_ASSEMBLE) {
-						log.debug("assemble = true. " + this
-								+ "send partital result");
-						try {
-							coordinatorProxy.sendPartialResult(workerID,
-									partialResults);
-						} catch (RemoteException e) {
-							e.printStackTrace();
-						}
-					}
-				}
+				flagLastStep = false;
 
-				else {
-
-					log.debug(" Worker: Superstep " + superstep + " completed.");
-
-					flagLocalCompute = false;
-
-					for (Entry<String, List<Message>> entry : outgoingMessages
-							.entrySet()) {
-						try {
-							worker2WorkerProxy.sendMessage(entry.getKey(),
-									entry.getValue());
-						} catch (RemoteException e) {
-							System.out.println("Can't send message to Worker "
-									+ entry.getKey() + " which is down");
-						}
-					}
-
-					// This worker will be active only if it has some messages
-					// queued up in the next superstep.
-					// activeWorkerSet will have all the workers who will be
-					// active
-					// in the next superstep.
-					Set<String> activeWorkerSet = new HashSet<String>();
-					activeWorkerSet.addAll(outgoingMessages.keySet());
-					if (currentIncomingMessages.size() > 0) {
-						activeWorkerSet.add(workerID);
-					}
-					// Send a message to the Master saying that this superstep
-					// has
-					// been completed.
+				if (KV.ENABLE_ASSEMBLE) {
+					log.debug("assemble = true. " + this
+							+ "send partital result");
 					try {
-						coordinatorProxy.localComputeCompleted(workerID,
-								activeWorkerSet);
+						coordinatorProxy.sendPartialResult(workerID,
+								partialResults);
 					} catch (RemoteException e) {
 						e.printStackTrace();
 					}
 				}
-
 			}
-		}
 
+			else {
+
+				log.debug(" Worker: Superstep " + superstep + " completed.");
+
+				flagLocalCompute = false;
+
+				for (Entry<String, List<Message>> entry : outgoingMessages
+						.entrySet()) {
+					try {
+						worker2WorkerProxy.sendMessage(entry.getKey(),
+								entry.getValue());
+					} catch (RemoteException e) {
+						System.out.println("Can't send message to Worker "
+								+ entry.getKey() + " which is down");
+					}
+				}
+
+				// This worker will be active only if it has some messages
+				// queued up in the next superstep.
+				// activeWorkerSet will have all the workers who will be
+				// active
+				// in the next superstep.
+				Set<String> activeWorkerSet = new HashSet<String>();
+				activeWorkerSet.addAll(outgoingMessages.keySet());
+				if (currentIncomingMessages.size() > 0) {
+					activeWorkerSet.add(workerID);
+				}
+				// Send a message to the Master saying that this superstep
+				// has
+				// been completed.
+				try {
+					coordinatorProxy.localComputeCompleted(workerID,
+							activeWorkerSet);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+
+		}
 	}
 
 	/**

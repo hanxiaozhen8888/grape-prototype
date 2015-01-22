@@ -184,8 +184,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 
 		totalPartitions += 1;
 		partitionIDList.add(partitionID);
-
-		log.debug("addpID,total=" + totalPartitions);
 	}
 
 	/**
@@ -198,7 +196,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		try {
 			totalPartitions += workerPartitionIDs.size();
 			worker.addPartitionIDList(workerPartitionIDs);
-			log.debug("addpIDList,total=" + totalPartitions);
 		} catch (RemoteException e) {
 			log.fatal("Remote Exception received from the Worker.");
 			log.fatal("Giving back the partition to the Master.");
