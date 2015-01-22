@@ -3,7 +3,7 @@ package ed.inf.grape.communicate;
 import java.rmi.RemoteException;
 import java.util.List;
 
-import ed.inf.grape.core.Message;
+import ed.inf.grape.interfaces.Message;
 
 /**
  * Interface for the workers to communicate between them

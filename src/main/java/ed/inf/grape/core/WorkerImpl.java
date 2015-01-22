@@ -23,10 +23,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ed.inf.grape.L.LocalComputeTask;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.Worker2WorkerProxy;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.interfaces.LocalComputeTask;
+import ed.inf.grape.interfaces.Message;
+import ed.inf.grape.interfaces.Query;
+import ed.inf.grape.interfaces.Result;
 import ed.inf.grape.util.Dev;
 import ed.inf.grape.util.IO;
 import ed.inf.grape.util.KV;
@@ -257,8 +260,11 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 						if (flagLastStep) {
 
-							localComputeTask.getResult().writeToFile(
-									workerID + ".rlt");
+							if (KV.ENABLE_ASSEMBLE == false) {
+
+								localComputeTask.getResult().writeToFile(
+										workerID + ".rlt");
+							}
 
 							partialResults.put(
 									localComputeTask.getPartitionID(),
@@ -319,15 +325,18 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 				if (flagLastStep) {
 
-					log.debug(this + "send partital result");
-
 					flagLastStep = false;
 
-					try {
-						coordinatorProxy.sendPartialResult(workerID,
-								partialResults);
-					} catch (RemoteException e) {
-						e.printStackTrace();
+					if (KV.ENABLE_ASSEMBLE) {
+						log.debug("assemble = true. " + this
+								+ "send partital result");
+
+						try {
+							coordinatorProxy.sendPartialResult(workerID,
+									partialResults);
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
 					}
 				}
 
@@ -623,10 +632,20 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		log.info("Get query:" + query.toString());
 
 		for (Entry<Integer, Partition> entry : this.partitions.entrySet()) {
-			LocalComputeTask localComputeTask = new LocalComputeTask(query,
-					entry.getKey());
-			this.nextLocalComputeTasksQueue.add(localComputeTask);
+
+			try {
+
+				LocalComputeTask localComputeTask = (LocalComputeTask) Class
+						.forName(KV.CLASS_LOCAL_COMPUTE_TASK).newInstance();
+				localComputeTask.init(query, entry.getKey());
+				this.nextLocalComputeTasksQueue.add(localComputeTask);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
+
+		// new PageRankTask(query, entry.getKey());
 
 		log.info("Instantiate " + this.nextLocalComputeTasksQueue.size()
 				+ " local task.");

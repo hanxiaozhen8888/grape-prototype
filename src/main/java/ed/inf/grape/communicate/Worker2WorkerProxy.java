@@ -5,8 +5,8 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Map;
 
-import ed.inf.grape.core.Message;
 import ed.inf.grape.core.Worker;
+import ed.inf.grape.interfaces.Message;
 
 /**
  * Represents a medium through which workers communicate with other workers

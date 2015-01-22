@@ -12,6 +12,11 @@ public class KV {
 
 	public static String GRAPH_FILE_PATH = null;
 
+	public static String CLASS_LOCAL_COMPUTE_TASK = null;
+	public static String CLASS_MESSAGE = null;
+	public static String CLASS_RESULT = null;
+	public static String CLASS_QUERY = null;
+
 	public static int PARTITION_COUNT = 0;
 
 	public static boolean ENABLE_COORDINATOR = false;
@@ -52,6 +57,17 @@ public class KV {
 
 			ENABLE_LOCAL_MESSAGE = Config.getInstance().getBooleanProperty(
 					"ENABLE_LOCAL_MESSAGE");
+
+			CLASS_LOCAL_COMPUTE_TASK = Config.getInstance().getStringProperty(
+					"CLASS_LOCAL_COMPUTE");
+
+			CLASS_RESULT = Config.getInstance().getStringProperty(
+					"CLASS_RESULT");
+
+			CLASS_MESSAGE = Config.getInstance().getStringProperty(
+					"CLASS_MESSAGE");
+
+			CLASS_QUERY = Config.getInstance().getStringProperty("CLASS_QUERY");
 
 		} catch (Exception e) {
 			e.printStackTrace();

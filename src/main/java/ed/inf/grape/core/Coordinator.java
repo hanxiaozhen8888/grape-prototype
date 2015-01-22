@@ -24,6 +24,8 @@ import ed.inf.grape.communicate.Client2Coordinator;
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.communicate.WorkerProxy;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.interfaces.Query;
+import ed.inf.grape.interfaces.Result;
 import ed.inf.grape.util.KV;
 
 /**
@@ -31,20 +33,13 @@ import ed.inf.grape.util.KV;
  * 
  * @author yecol
  */
-@SuppressWarnings("deprecation")
 public class Coordinator extends UnicastRemoteObject implements
 		Worker2Coordinator, Client2Coordinator {
 
 	private static final long serialVersionUID = 7264167926318903124L;
 
-	/** The master thread. */
-	// private Thread masterThread;
-
 	/** The total number of worker threads. */
 	private static AtomicInteger totalWorkerThreads = new AtomicInteger(0);
-
-	// /** The health manager *. */
-	// private HealthManager healthManager;
 
 	/** The workerID to WorkerProxy map. */
 	private Map<String, WorkerProxy> workerProxyMap = new ConcurrentHashMap<String, WorkerProxy>();
@@ -169,36 +164,6 @@ public class Coordinator extends UnicastRemoteObject implements
 	}
 
 	/**
-	 * Sets the initial message for the Worker that has the source vertex.
-	 * 
-	 * @param <T>
-	 *            the generic type
-	 * @param sourceVertex_partitionID
-	 *            the source vertex partition id
-	 * @param sourceVertexID
-	 *            the source vertex id
-	 * @param initData
-	 *            the data
-	 * @throws RemoteException
-	 *             the remote exception
-	 */
-	/*
-	 * private <T> void setInitialMessage(int sourceVertex_partitionID, long
-	 * sourceVertexID, Data<T> initData) throws RemoteException {
-	 * System.out.println("Master: setInitialMessage"); List<Message>
-	 * messageList = new ArrayList<>(); messageList.add(new Message(null,
-	 * initData)); Map<VertexID, List<Message>> map = new HashMap<>(); VertexID
-	 * sourceVertex = new VertexID(sourceVertex_partitionID, sourceVertexID);
-	 * map.put(sourceVertex, messageList); ConcurrentHashMap<Integer,
-	 * Map<VertexID, List<Message>>> initialMessage = new ConcurrentHashMap<>();
-	 * initialMessage.put(sourceVertex_partitionID, map);
-	 * workerProxyMap.get(activeWorkerSet.toArray()[0]).setInitialMessage(
-	 * initialMessage);
-	 * 
-	 * }
-	 */
-
-	/**
 	 * The main method.
 	 * 
 	 * @param args
@@ -232,25 +197,8 @@ public class Coordinator extends UnicastRemoteObject implements
 		log.info("Master: halt");
 		log.debug("Worker Proxy Map " + workerProxyMap);
 
-		// String outputDir = null;
-		// try {
-		// outputDir = Props.getInstance().getStringProperty("OUTPUT_DIR");
-		// } catch (PropertyNotFoundException e) {
-		// e.printStackTrace();
-		// }
-		//
-		// // Create the output dir if it doesn't exist
-		// File file = new File(outputDir);
-		// if (!file.exists()) {
-		// file.mkdirs();
-		// }
-
-		// String outputFilePath = outputDir + File.separator
-		// + System.currentTimeMillis() + ".txt";
-
 		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
 			WorkerProxy workerProxy = entry.getValue();
-			// workerProxy.writeOutput(outputFilePath);
 			workerProxy.halt();
 		}
 
@@ -259,9 +207,6 @@ public class Coordinator extends UnicastRemoteObject implements
 		log.info("Time taken: " + (endTime - startTime) + " ms");
 		// Restore the system back to its initial state
 		restoreInitialState();
-		// Inform the client about the result.
-		// resultQueue.add(outputFilePath);
-
 	}
 
 	/**
@@ -271,7 +216,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		this.activeWorkerSet.clear();
 		this.workerAcknowledgementSet.clear();
 		this.partitionWorkerMap.clear();
-		// this.superstep = 0;
+		this.superstep = 0;
 	}
 
 	/*
@@ -290,35 +235,6 @@ public class Coordinator extends UnicastRemoteObject implements
 		workerProxyMap.remove(workerID);
 		workerMap.remove(workerID);
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see system.Worker2Master#superStepCompleted(java.lang.String,
-	 * java.util.Set)
-	 */
-	// @Override
-	// public synchronized void superStepCompleted(String workerID,
-	// Set<String> activeWorkerSet) throws RemoteException {
-	// // System.out.println("Master: superStepCompleted");
-	// // System.out.println("Acknowledgment from Worker: " + workerID +
-	// // " - activeWorkerSet " + activeWorkerSet);
-	// this.activeWorkerSet.addAll(activeWorkerSet);
-	// this.workerAcknowledgementSet.remove(workerID);
-	// // System.out.println("WorkerAcknowledgmentSet: " +
-	// // this.workerAcknowledgementSet);
-	// // If the acknowledgment has been received from all the workers, start
-	// // the next superstep
-	// if (this.workerAcknowledgementSet.size() == 0) {
-	// // System.out.println("Acknowledgment received from all workers " +
-	// // activeWorkerSet);
-	// superstep++;
-	// if (activeWorkerSet.size() != 0)
-	// startSuperStep();
-	// else
-	// halt();
-	// }
-	// }
 
 	/**
 	 * Gets the partition worker map.
@@ -374,11 +290,13 @@ public class Coordinator extends UnicastRemoteObject implements
 	}
 
 	public void putTask(Query query) throws RemoteException {
-		// TODO Auto-generated method stub
 
 		log.info("receive task with query = " + query);
 
+		/** initiate local compute tasks. */
 		sendQuery(query);
+
+		/** begin to compute. */
 		nextLocalCompute();
 	}
 
@@ -592,7 +510,7 @@ public class Coordinator extends UnicastRemoteObject implements
 
 	}
 
-	public Result assembleResults(String workerID,
+	public void receivePartialResults(String workerID,
 			Map<Integer, Result> mapPartitionID2Result) {
 		log.info("assemble a final result");
 
@@ -603,12 +521,20 @@ public class Coordinator extends UnicastRemoteObject implements
 		this.workerAcknowledgementSet.remove(workerID);
 
 		if (this.workerAcknowledgementSet.size() == 0) {
-			log.debug(mapPartitionID2Result);
 
-			// TODO: assemble partition results
+			/** receive all the partial results, assemble them. */
+
+			try {
+
+				Result finalResult = (Result) Class.forName(KV.CLASS_RESULT)
+						.newInstance();
+				finalResult.assemblePartialResults(resultMap.values());
+				finalResult.writeToFile("finalResult.rlt");
+
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
-
-		return null;
 	}
 
 	@Override
@@ -628,5 +554,4 @@ public class Coordinator extends UnicastRemoteObject implements
 		// TODO Auto-generated method stub
 
 	}
-
 }

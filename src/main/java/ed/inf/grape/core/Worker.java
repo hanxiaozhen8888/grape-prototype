@@ -7,6 +7,8 @@ import java.util.Map;
 
 import ed.inf.grape.communicate.Worker2Coordinator;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.interfaces.Message;
+import ed.inf.grape.interfaces.Query;
 
 public interface Worker extends Remote {
 

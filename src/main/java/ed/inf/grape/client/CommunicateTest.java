@@ -6,7 +6,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
 import ed.inf.grape.communicate.Client2Coordinator;
-import ed.inf.grape.core.Query;
+import ed.inf.grape.interfaces.Query;
 import ed.inf.grape.util.KV;
 
 public class CommunicateTest {

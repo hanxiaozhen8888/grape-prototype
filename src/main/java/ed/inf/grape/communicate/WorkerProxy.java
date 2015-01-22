@@ -12,10 +12,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ed.inf.grape.core.Coordinator;
-import ed.inf.grape.core.Query;
-import ed.inf.grape.core.Result;
 import ed.inf.grape.core.Worker;
 import ed.inf.grape.graph.Partition;
+import ed.inf.grape.interfaces.Query;
+import ed.inf.grape.interfaces.Result;
 
 /**
  * Represents a thread which is used by the master to talk to workers and
@@ -293,6 +293,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	@Override
 	public void sendPartialResult(String workerID,
 			Map<Integer, Result> mapPartitionID2Result) throws RemoteException {
-		this.coordinator.assembleResults(workerID,mapPartitionID2Result);
+		this.coordinator.receivePartialResults(workerID, mapPartitionID2Result);
 	}
 }
