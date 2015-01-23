@@ -1,15 +1,10 @@
 package ed.inf.grape.interfaces;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ed.inf.grape.graph.Edge;
 import ed.inf.grape.graph.Partition;
 import ed.inf.grape.util.KV;
 

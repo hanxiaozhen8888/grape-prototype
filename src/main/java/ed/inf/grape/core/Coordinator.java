@@ -118,6 +118,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
+	@Override
 	public Worker2Coordinator register(Worker worker, String workerID,
 			int numWorkerThreads) throws RemoteException {
 
@@ -263,6 +264,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	 *             stops itself.
 	 */
 
+	@Override
 	public void shutdown() throws RemoteException {
 		// if (healthManager != null)
 		// healthManager.exit();
@@ -289,6 +291,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		sendWorkerPartitionInfo();
 	}
 
+	@Override
 	public void putTask(Query query) throws RemoteException {
 
 		log.info("receive task with query = " + query);
@@ -529,7 +532,7 @@ public class Coordinator extends UnicastRemoteObject implements
 				Result finalResult = (Result) Class.forName(KV.CLASS_RESULT)
 						.newInstance();
 				finalResult.assemblePartialResults(resultMap.values());
-				finalResult.writeToFile("finalResult.rlt");
+				finalResult.writeToFile(KV.OUTPUT_DIR + "finalResult.rlt");
 
 			} catch (Exception e) {
 				e.printStackTrace();

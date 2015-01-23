@@ -30,6 +30,8 @@ int main(int argc, char *argv[])
     params_t *params;
     params = parse_cmdline(argc, argv);
 
+    // string outputdir = "";
+
     /** input file name */
     string filename = params->filename;
     int kway = params->nparts;

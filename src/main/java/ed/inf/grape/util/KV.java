@@ -11,13 +11,13 @@ public class KV {
 	public static int MAX_THREAD_LIMITATION = Integer.MAX_VALUE;
 
 	public static String GRAPH_FILE_PATH = null;
+	public static int PARTITION_COUNT = 0;
+	public static String OUTPUT_DIR = null;
 
 	public static String CLASS_LOCAL_COMPUTE_TASK = null;
 	public static String CLASS_MESSAGE = null;
 	public static String CLASS_RESULT = null;
 	public static String CLASS_QUERY = null;
-
-	public static int PARTITION_COUNT = 0;
 
 	public static boolean ENABLE_COORDINATOR = false;
 	public static boolean ENABLE_ASSEMBLE = false;
@@ -36,6 +36,8 @@ public class KV {
 
 			GRAPH_FILE_PATH = Config.getInstance().getStringProperty(
 					"GRAPH_FILE_PATH");
+
+			OUTPUT_DIR = Config.getInstance().getStringProperty("OUTPUT_DIR");
 
 			PARTITION_COUNT = Config.getInstance().getIntProperty(
 					"PARTITION_COUNT");

@@ -7,8 +7,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import ed.inf.grape.graph.Partition;
-import ed.inf.grape.util.Config;
 import ed.inf.grape.util.IO;
+import ed.inf.grape.util.KV;
 
 /**
  * Partitioner, divide a whole graph into several partitions with predefined
@@ -28,40 +28,17 @@ public class Partitioner {
 	/** Partition strategy */
 	private int strategy;
 
-	/** Partition count */
-	private static int PARTITION_COUNT;
-
-	private static String GRAPH_FILE_PATH;
-
-	private static int GRAPH_VERTEX_COUNT;
-
 	/** Partition id */
 	private static int currentPartitionId;
 
 	static Logger log = LogManager.getLogger(Partitioner.class);
-
-	static {
-
-		currentPartitionId = 0;
-
-		try {
-			PARTITION_COUNT = Config.getInstance().getIntProperty(
-					"PARTITION_COUNT");
-			GRAPH_FILE_PATH = Config.getInstance().getStringProperty(
-					"GRAPH_FILE_PATH");
-			GRAPH_VERTEX_COUNT = Config.getInstance().getIntProperty(
-					"GRAPH_VERTEX_COUNT");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 
 	public Partitioner(int strategy) {
 		this.strategy = strategy;
 	}
 
 	public int getNumOfPartitions() {
-		return Partitioner.PARTITION_COUNT;
+		return KV.PARTITION_COUNT;
 	}
 
 	// @SuppressWarnings("unused")
@@ -169,13 +146,13 @@ public class Partitioner {
 
 		Partition p = null;
 
-		if (currentPartitionId >= PARTITION_COUNT) {
+		if (currentPartitionId >= KV.PARTITION_COUNT) {
 			return p;
 		}
 
 		else {
 
-			String partitionFilename = GRAPH_FILE_PATH + ".p"
+			String partitionFilename = KV.GRAPH_FILE_PATH + ".p"
 					+ String.valueOf(currentPartitionId);
 			// try {
 			p = IO.loadPartitions(currentPartitionId++, partitionFilename);
@@ -191,7 +168,7 @@ public class Partitioner {
 
 	public boolean hasNextPartitionID() {
 
-		return currentPartitionId < PARTITION_COUNT;
+		return currentPartitionId < KV.PARTITION_COUNT;
 	}
 
 	public int getNextPartitionID() {
@@ -199,7 +176,7 @@ public class Partitioner {
 		/** run program target gpartition */
 		int ret = -1;
 
-		if (currentPartitionId < PARTITION_COUNT) {
+		if (currentPartitionId < KV.PARTITION_COUNT) {
 			ret = currentPartitionId++;
 		}
 
@@ -209,7 +186,7 @@ public class Partitioner {
 	public Map<Integer, Integer> getVirtualVertex2PartitionMap() {
 
 		try {
-			return IO.loadInt2IntMapFromFile(GRAPH_FILE_PATH + ".vvp");
+			return IO.loadInt2IntMapFromFile(KV.GRAPH_FILE_PATH + ".vvp");
 		} catch (IOException e) {
 			log.error("load virtual vertex 2 partition map failed.");
 			e.printStackTrace();

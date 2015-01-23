@@ -2,13 +2,8 @@ package ed.inf.grape.interfaces;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import ed.inf.grape.util.IO;
 
 public abstract class Result implements Serializable {
 

@@ -69,6 +69,7 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		t.start();
 	}
 
+	@Override
 	public void run() {
 		Partition partition = null;
 		while (true) {
@@ -226,6 +227,7 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 * 
 	 * @see system.Worker2Master#register(system.Worker, java.lang.String, int)
 	 */
+	@Override
 	public Worker2Coordinator register(Worker worker, String workerID,
 			int numWorkerThreads) throws RemoteException {
 		return null;
@@ -241,6 +243,7 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	/**
 	 * Shutdowns the worker and exits
 	 */
+	@Override
 	public void shutdown() {
 		try {
 			worker.shutdown();

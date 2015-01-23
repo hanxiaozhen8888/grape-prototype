@@ -42,7 +42,6 @@
 									<directory>src/main/resources</directory>
 									<includes>
 										<include>*.policy</include>
-										<include>*.dat</include>
 										<include>*.properties</include>
 									</includes>
 								</resource>
@@ -136,6 +135,9 @@
 						<phase>package</phase>
 						<configuration>
 							<target>
+								<echo message="Creating tmp directory for output" />
+								<mkdir dir="target/output" />
+								<echo message="Chmod of gpartition" />
 								<chmod file="target/gpartition" perm="755" />
 							</target>
 						</configuration>

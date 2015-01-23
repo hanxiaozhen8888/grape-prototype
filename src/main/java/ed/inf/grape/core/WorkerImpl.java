@@ -116,7 +116,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
 				"MMdd.HHmmss.SSS");
 		String timestamp = simpleDateFormat.format(new Date());
-
+		String syncModel = KV.ENABLE_SYNC ? "SYNC_" : "ASYNC_";
 		String hostName = new String();
 		try {
 			address = InetAddress.getLocalHost();
@@ -126,7 +126,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 			log.error(e);
 		}
 
-		this.workerID = hostName + "_" + timestamp;
+		this.workerID = syncModel + hostName + "_" + timestamp;
 		this.partitions = new HashMap<Integer, Partition>();
 		this.currentLocalComputeTaskQueue = new LinkedBlockingDeque<LocalComputeTask>();
 		this.nextLocalComputeTasksQueue = new LinkedBlockingQueue<LocalComputeTask>();
@@ -137,11 +137,23 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		this.numThreads = Math.min(Runtime.getRuntime().availableProcessors(),
 				KV.MAX_THREAD_LIMITATION);
 		this.stopSendingMessage = false;
-		for (int i = 0; i < numThreads; i++) {
-			log.debug("Starting Thread " + (i + 1));
-			WorkerThread workerThread = new WorkerThread();
-			workerThread.setName(this.workerID + "_th" + i);
-			workerThread.start();
+
+		if (KV.ENABLE_SYNC) {
+			for (int i = 0; i < numThreads; i++) {
+				log.debug("Starting SyncThread " + (i + 1));
+				SyncWorkerThread syncWorkerThread = new SyncWorkerThread();
+				syncWorkerThread.setName(this.workerID + "_th" + i);
+				syncWorkerThread.start();
+			}
+		}
+
+		else {
+			for (int i = 0; i < numThreads; i++) {
+				log.debug("Starting AsyncThread " + (i + 1));
+				SyncWorkerThread asyncWorkerThread = new SyncWorkerThread();
+				asyncWorkerThread.setName(this.workerID + "_th" + i);
+				asyncWorkerThread.start();
+			}
 		}
 	}
 
@@ -153,6 +165,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
+	@Override
 	public void addPartition(Partition partition) throws RemoteException {
 		log.info("receive partition:" + partition.getPartitionInfo());
 		log.debug(Dev.currentRuntimeState());
@@ -168,6 +181,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
+	@Override
 	public void addPartitionList(List<Partition> workerPartitions)
 			throws RemoteException {
 		log.debug(Dev.currentRuntimeState());
@@ -221,6 +235,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * 
 	 * @return the num threads
 	 */
+	@Override
 	public int getNumThreads() {
 		return numThreads;
 	}
@@ -230,14 +245,15 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * 
 	 * @return the worker id
 	 */
+	@Override
 	public String getWorkerID() {
 		return workerID;
 	}
 
 	/**
-	 * The Class WorkerThread.
+	 * The Class AsyncWorkerThread.
 	 */
-	private class WorkerThread extends Thread {
+	private class AsyncWorkerThread extends Thread {
 
 		@Override
 		public void run() {
@@ -264,6 +280,93 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 
 								localComputeTask.getResult().writeToFile(
 										workerID
+												+ localComputeTask
+														.getPartitionID()
+												+ ".rlt");
+							}
+
+							partialResults.put(
+									localComputeTask.getPartitionID(),
+									localComputeTask.getResult());
+						}
+
+						else {
+
+							if (superstep == 0) {
+
+								/** begin step. initial compute */
+								localComputeTask.compute(workingPartition);
+								updateOutgoingMessages(localComputeTask
+										.getMessages());
+							}
+
+							else {
+
+								/** not begin step. incremental compute */
+								List<Message> messageForWorkingPartition = previousIncomingMessages
+										.get(localComputeTask.getPartitionID());
+
+								if (messageForWorkingPartition != null) {
+
+									localComputeTask.incrementalCompute(
+											workingPartition,
+											messageForWorkingPartition);
+
+									updateOutgoingMessages(localComputeTask
+											.getMessages());
+								}
+							}
+
+							localComputeTask.prepareForNextCompute();
+						}
+
+						nextLocalComputeTasksQueue.add(localComputeTask);
+						checkAndSendMessage();
+
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * The Class SyncWorkerThread.
+	 */
+	private class SyncWorkerThread extends Thread {
+
+		@Override
+		public void run() {
+			while (true) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e1) {
+					e1.printStackTrace();
+				}
+				while (flagLocalCompute || flagLastStep) {
+					log.debug(this + "superstep loop start for superstep "
+							+ superstep + "laststep = " + flagLastStep);
+					try {
+
+						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue
+								.take();
+
+						Partition workingPartition = partitions
+								.get(localComputeTask.getPartitionID());
+
+						if (flagLastStep) {
+
+							if (KV.ENABLE_ASSEMBLE == false) {
+
+								System.out.println(KV.OUTPUT_DIR);
+								String dir = KV.OUTPUT_DIR.substring(1,
+										KV.OUTPUT_DIR.length() - 1);
+
+								localComputeTask.getResult().writeToFile(
+										dir
+												+ workerID
 												+ localComputeTask
 														.getPartitionID()
 												+ ".rlt");
@@ -395,6 +498,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
+	@Override
 	public void halt() throws RemoteException {
 		System.out.println("Worker Machine " + workerID + " halts");
 		this.restoreInitialState();
@@ -473,6 +577,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 *            the map worker id to worker
 	 * @throws RemoteException
 	 */
+	@Override
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
 			Map<Integer, Integer> mapVertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId,
@@ -526,6 +631,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @param masterProxy
 	 *            the new master proxy
 	 */
+	@Override
 	public void setCoordinatorProxy(Worker2Coordinator coordinatorProxy) {
 		this.coordinatorProxy = coordinatorProxy;
 	}
@@ -538,6 +644,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
+	@Override
 	public void receiveMessage(List<Message> incomingMessages)
 			throws RemoteException {
 
@@ -585,6 +692,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	}
 
 	/** shutdown the worker */
+	@Override
 	public void shutdown() throws RemoteException {
 		java.util.Date date = new java.util.Date();
 		log.info("Worker" + workerID + " goes down now at :"
