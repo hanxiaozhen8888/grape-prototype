@@ -13,9 +13,9 @@ import ed.inf.grape.graph.Partition;
 import ed.inf.grape.interfaces.LocalComputeTask;
 import ed.inf.grape.interfaces.Message;
 
-public class PageRankTask extends LocalComputeTask {
+public class SyncPageRankTask extends LocalComputeTask {
 
-	static Logger log = LogManager.getLogger(PageRankTask.class);
+	static Logger log = LogManager.getLogger(SyncPageRankTask.class);
 
 	private static final double THREASHOLD = 0.01;
 	private static final double INIT_RANK = 0.5;
@@ -68,7 +68,6 @@ public class PageRankTask extends LocalComputeTask {
 		log.debug("aggregateIncommingMessages.size = "
 				+ aggregateByVertex.size());
 
-
 		for (Entry<Integer, Double> entry : aggregateByVertex.entrySet()) {
 
 			int source = entry.getKey();
@@ -105,7 +104,6 @@ public class PageRankTask extends LocalComputeTask {
 			// entry.getValue()
 			// + ", diff=" + Math.abs(updatedRank - oldRank));
 
-			
 			if (this.getSuperstep() < ITERATION_LIMIT
 			// && Math.abs(updatedRank - oldRank) > THREASHOLD
 			) {

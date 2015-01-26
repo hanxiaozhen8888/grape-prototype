@@ -14,11 +14,11 @@ public class CommunicateTest {
 	public static void main(String[] args) throws RemoteException,
 			NotBoundException, MalformedURLException, ClassNotFoundException,
 			InstantiationException, IllegalAccessException {
-		String masterMachineName = args[0];
-		String masterURL = "//" + masterMachineName + "/"
+		String coordinatorMachineName = args[0];
+		String coordinatorURL = "//" + coordinatorMachineName + "/"
 				+ KV.COORDINATOR_SERVICE_NAME;
 		Client2Coordinator client2Coordinator = (Client2Coordinator) Naming
-				.lookup(masterURL);
+				.lookup(coordinatorURL);
 		runApplication(client2Coordinator);
 	}
 

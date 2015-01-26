@@ -139,6 +139,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		this.stopSendingMessage = false;
 
 		if (KV.ENABLE_SYNC) {
+
+			/* Sync model worker threads */
 			for (int i = 0; i < numThreads; i++) {
 				log.debug("Starting SyncThread " + (i + 1));
 				SyncWorkerThread syncWorkerThread = new SyncWorkerThread();
@@ -148,6 +150,8 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 		}
 
 		else {
+
+			/* Async model worker threads */
 			for (int i = 0; i < numThreads; i++) {
 				log.debug("Starting AsyncThread " + (i + 1));
 				SyncWorkerThread asyncWorkerThread = new SyncWorkerThread();
@@ -264,68 +268,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 					e1.printStackTrace();
 				}
 				while (flagLocalCompute || flagLastStep) {
-					log.debug(this + "superstep loop start for superstep "
-							+ superstep + "laststep = " + flagLastStep);
-					try {
-
-						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue
-								.take();
-
-						Partition workingPartition = partitions
-								.get(localComputeTask.getPartitionID());
-
-						if (flagLastStep) {
-
-							if (KV.ENABLE_ASSEMBLE == false) {
-
-								localComputeTask.getResult().writeToFile(
-										workerID
-												+ localComputeTask
-														.getPartitionID()
-												+ ".rlt");
-							}
-
-							partialResults.put(
-									localComputeTask.getPartitionID(),
-									localComputeTask.getResult());
-						}
-
-						else {
-
-							if (superstep == 0) {
-
-								/** begin step. initial compute */
-								localComputeTask.compute(workingPartition);
-								updateOutgoingMessages(localComputeTask
-										.getMessages());
-							}
-
-							else {
-
-								/** not begin step. incremental compute */
-								List<Message> messageForWorkingPartition = previousIncomingMessages
-										.get(localComputeTask.getPartitionID());
-
-								if (messageForWorkingPartition != null) {
-
-									localComputeTask.incrementalCompute(
-											workingPartition,
-											messageForWorkingPartition);
-
-									updateOutgoingMessages(localComputeTask
-											.getMessages());
-								}
-							}
-
-							localComputeTask.prepareForNextCompute();
-						}
-
-						nextLocalComputeTasksQueue.add(localComputeTask);
-						checkAndSendMessage();
-
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+					// TODO: implementation
 				}
 			}
 		}
