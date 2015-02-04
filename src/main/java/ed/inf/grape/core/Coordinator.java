@@ -108,7 +108,7 @@ public class Coordinator extends UnicastRemoteObject implements
 	 * Registers the worker computation nodes with the master.
 	 * 
 	 * @param worker
-	 *            Represents the {@link system.WorkerImpl Worker}
+	 *            Represents the {@link WorkerSyncImpl.WorkerImpl Worker}
 	 * @param workerID
 	 *            the worker id
 	 * @param numWorkerThreads
@@ -287,8 +287,14 @@ public class Coordinator extends UnicastRemoteObject implements
 
 		startTime = System.currentTimeMillis();
 
-		assignDistributedPartitions();
-		sendWorkerPartitionInfo();
+		if (KV.PARTITION_STRATEGY == Partitioner.STRATEGY_METIS) {
+			assignDistributedPartitions();
+			sendWorkerPartitionInfo();
+		}
+
+		if (KV.PARTITION_STRATEGY == Partitioner.STRATEGY_HASH) {
+			// TODO: hash vertexID to total threads.
+		}
 	}
 
 	@Override
@@ -311,7 +317,7 @@ public class Coordinator extends UnicastRemoteObject implements
 		 * 
 		 * */
 
-		partitioner = new Partitioner(Partitioner.STRATEGY_METIS);
+		partitioner = new Partitioner(KV.PARTITION_STRATEGY);
 		partitionWorkerMap = new HashMap<Integer, String>();
 
 		int totalPartitions = partitioner.getNumOfPartitions(), partitionID;

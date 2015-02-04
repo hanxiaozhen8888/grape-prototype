@@ -40,7 +40,7 @@ import ed.inf.grape.util.KV;
  * @author Yecol
  */
 
-public class WorkerImpl extends UnicastRemoteObject implements Worker {
+public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 
 	private static final long serialVersionUID = 8653095027537771705L;
 
@@ -103,7 +103,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	/** The super step counter. */
 	private long superstep = 0;
 
-	static Logger log = LogManager.getLogger(WorkerImpl.class);
+	static Logger log = LogManager.getLogger(WorkerSyncImpl.class);
 
 	/**
 	 * Instantiates a new worker.
@@ -111,7 +111,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
-	public WorkerImpl() throws RemoteException {
+	public WorkerSyncImpl() throws RemoteException {
 		InetAddress address = null;
 		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
 				"MMdd.HHmmss.SSS");
@@ -138,27 +138,13 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 				KV.MAX_THREAD_LIMITATION);
 		this.stopSendingMessage = false;
 
-		if (KV.ENABLE_SYNC) {
-
-			/* Sync model worker threads */
-			for (int i = 0; i < numThreads; i++) {
-				log.debug("Starting SyncThread " + (i + 1));
-				SyncWorkerThread syncWorkerThread = new SyncWorkerThread();
-				syncWorkerThread.setName(this.workerID + "_th" + i);
-				syncWorkerThread.start();
-			}
+		for (int i = 0; i < numThreads; i++) {
+			log.debug("Starting AsyncThread " + (i + 1));
+			WorkerThread workerThread = new WorkerThread();
+			workerThread.setName(this.workerID + "_th" + i);
+			workerThread.start();
 		}
 
-		else {
-
-			/* Async model worker threads */
-			for (int i = 0; i < numThreads; i++) {
-				log.debug("Starting AsyncThread " + (i + 1));
-				SyncWorkerThread asyncWorkerThread = new SyncWorkerThread();
-				asyncWorkerThread.setName(this.workerID + "_th" + i);
-				asyncWorkerThread.start();
-			}
-		}
 	}
 
 	/**
@@ -255,30 +241,9 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 	}
 
 	/**
-	 * The Class AsyncWorkerThread.
-	 */
-	private class AsyncWorkerThread extends Thread {
-
-		@Override
-		public void run() {
-			while (true) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-				while (flagLocalCompute || flagLastStep) {
-					// TODO: implementation
-				}
-			}
-		}
-
-	}
-
-	/**
 	 * The Class SyncWorkerThread.
 	 */
-	private class SyncWorkerThread extends Thread {
+	private class WorkerThread extends Thread {
 
 		@Override
 		public void run() {
@@ -555,7 +520,7 @@ public class WorkerImpl extends UnicastRemoteObject implements Worker {
 					+ KV.COORDINATOR_SERVICE_NAME;
 			Worker2Coordinator worker2Coordinator = (Worker2Coordinator) Naming
 					.lookup(masterURL);
-			Worker worker = new WorkerImpl();
+			Worker worker = new WorkerSyncImpl();
 			Worker2Coordinator coordinatorProxy = worker2Coordinator.register(
 					worker, worker.getWorkerID(), worker.getNumThreads());
 

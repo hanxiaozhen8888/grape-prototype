@@ -22,8 +22,14 @@ import ed.inf.grape.util.KV;
  */
 public class Partitioner {
 
+	/** Partition graph with a simple strategy, greedy scan and divide. */
 	public static int STRATEGY_SIMPLE = 0;
+
+	/** Partition graph with LibMetis. */
 	public static int STRATEGY_METIS = 1;
+
+	/** Partition graph with hash vertex. */
+	public static int STRATEGY_HASH = 2;
 
 	/** Partition strategy */
 	private int strategy;
@@ -142,7 +148,9 @@ public class Partitioner {
 
 	public Partition getNextPartition() {
 
-		/** run program target gpartition */
+		/** Assume have run program target/gpartition */
+
+		assert this.strategy == STRATEGY_METIS;
 
 		Partition p = null;
 
@@ -154,12 +162,7 @@ public class Partitioner {
 
 			String partitionFilename = KV.GRAPH_FILE_PATH + ".p"
 					+ String.valueOf(currentPartitionId);
-			// try {
 			p = IO.loadPartitions(currentPartitionId++, partitionFilename);
-			// } catch (IOException e) {
-			// log.error("read partition file error.");
-			// e.printStackTrace();
-			// }
 		}
 		log.info(p.getPartitionInfo());
 
@@ -173,7 +176,10 @@ public class Partitioner {
 
 	public int getNextPartitionID() {
 
-		/** run program target gpartition */
+		/** Assume have run program target/gpartition */
+
+		assert this.strategy == STRATEGY_METIS;
+
 		int ret = -1;
 
 		if (currentPartitionId < KV.PARTITION_COUNT) {
@@ -184,6 +190,8 @@ public class Partitioner {
 	}
 
 	public Map<Integer, Integer> getVirtualVertex2PartitionMap() {
+
+		assert this.strategy == STRATEGY_METIS;
 
 		try {
 			return IO.loadInt2IntMapFromFile(KV.GRAPH_FILE_PATH + ".vvp");
@@ -208,4 +216,10 @@ public class Partitioner {
 		}
 	}
 
+	public static int hashVertexToPartition(int vertexID) {
+
+		assert KV.PARTITION_STRATEGY == STRATEGY_HASH;
+		// TODO:hash and map vertex to partition;
+		return -1;
+	}
 }

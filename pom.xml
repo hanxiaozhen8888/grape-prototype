@@ -109,7 +109,7 @@
 							<appendAssemblyId>false</appendAssemblyId>
 							<archive>
 								<manifest>
-									<mainClass>ed.inf.grape.core.WorkerImpl</mainClass>
+									<mainClass>ed.inf.grape.core.WorkerSyncImpl</mainClass>
 								</manifest>
 							</archive>
 							<descriptorRefs>

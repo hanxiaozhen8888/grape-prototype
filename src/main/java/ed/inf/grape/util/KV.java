@@ -11,7 +11,8 @@ public class KV {
 	public static int MAX_THREAD_LIMITATION = Integer.MAX_VALUE;
 
 	public static String GRAPH_FILE_PATH = null;
-	public static int PARTITION_COUNT = 0;
+	public static int PARTITION_COUNT = -1;
+	public static int PARTITION_STRATEGY = -1;
 	public static String OUTPUT_DIR = null;
 
 	public static String CLASS_LOCAL_COMPUTE_TASK = null;
@@ -42,6 +43,9 @@ public class KV {
 			PARTITION_COUNT = Config.getInstance().getIntProperty(
 					"PARTITION_COUNT");
 
+			PARTITION_COUNT = Config.getInstance().getIntProperty(
+					"PARTITION_STRATEGY");
+
 			ENABLE_COORDINATOR = Config.getInstance().getBooleanProperty(
 					"ENABLE_COORDINATOR");
 
@@ -70,6 +74,8 @@ public class KV {
 					"CLASS_MESSAGE");
 
 			CLASS_QUERY = Config.getInstance().getStringProperty("CLASS_QUERY");
+
+			// TODO:validate configuration, some combination are not valid.
 
 		} catch (Exception e) {
 			e.printStackTrace();
