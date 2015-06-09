@@ -1,4 +1,4 @@
-package inf.ed.grape.client;
+package inf.ed.grape.core;
 
 import inf.ed.grape.communicate.Client2Coordinator;
 import inf.ed.grape.interfaces.Query;
@@ -9,16 +9,14 @@ import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 
-public class CommunicateTest {
+public class Client {
 
-	public static void main(String[] args) throws RemoteException,
-			NotBoundException, MalformedURLException, ClassNotFoundException,
-			InstantiationException, IllegalAccessException {
+	public static void main(String[] args) throws RemoteException, NotBoundException,
+			MalformedURLException, ClassNotFoundException, InstantiationException,
+			IllegalAccessException {
 		String coordinatorMachineName = args[0];
-		String coordinatorURL = "//" + coordinatorMachineName + "/"
-				+ KV.COORDINATOR_SERVICE_NAME;
-		Client2Coordinator client2Coordinator = (Client2Coordinator) Naming
-				.lookup(coordinatorURL);
+		String coordinatorURL = "//" + coordinatorMachineName + "/" + KV.COORDINATOR_SERVICE_NAME;
+		Client2Coordinator client2Coordinator = (Client2Coordinator) Naming.lookup(coordinatorURL);
 		runApplication(client2Coordinator);
 	}
 
@@ -30,8 +28,8 @@ public class CommunicateTest {
 	 * @throws InstantiationException
 	 */
 	private static void runApplication(Client2Coordinator client2Coordinator)
-			throws RemoteException, InstantiationException,
-			IllegalAccessException, ClassNotFoundException {
+			throws RemoteException, InstantiationException, IllegalAccessException,
+			ClassNotFoundException {
 
 		client2Coordinator.preProcess();
 		Query q = (Query) Class.forName(KV.CLASS_QUERY).newInstance();

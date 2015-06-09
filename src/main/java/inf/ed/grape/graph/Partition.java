@@ -47,6 +47,10 @@ public class Partition implements Serializable {
 		return partitionID;
 	}
 
+	public Graph<? extends Vertex, ? extends Edge> getGraph() {
+		return this.graph;
+	}
+
 	public void addOutgoingVertex(int vertexID) {
 		this.outgoingVertices.add(vertexID);
 	}

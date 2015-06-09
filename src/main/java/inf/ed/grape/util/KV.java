@@ -11,6 +11,7 @@ public class KV {
 	public static int MAX_THREAD_LIMITATION = Integer.MAX_VALUE;
 
 	public static String GRAPH_FILE_PATH = null;
+	public static String QUERY_FILE_PATH = null;
 	public static int PARTITION_COUNT = -1;
 	public static int PARTITION_STRATEGY = -1;
 	public static String OUTPUT_DIR = null;
@@ -36,6 +37,8 @@ public class KV {
 					"THREAD_LIMIT_ON_EACH_MACHINE");
 
 			GRAPH_FILE_PATH = Config.getInstance().getStringProperty("GRAPH_FILE_PATH");
+
+			QUERY_FILE_PATH = Config.getInstance().getStringProperty("QUERY_FILE_PATH");
 
 			OUTPUT_DIR = Config.getInstance().getStringProperty("OUTPUT_DIR");
 
