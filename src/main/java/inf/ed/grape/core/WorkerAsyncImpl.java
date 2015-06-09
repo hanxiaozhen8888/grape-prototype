@@ -102,7 +102,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 	/** The super step counter. */
 	private long superstep = 0;
 
-	static Logger log = LogManager.getLogger(WorkerSyncImpl.class);
+	static Logger log = LogManager.getLogger(WorkerAsyncImpl.class);
 
 	/**
 	 * Instantiates a new worker.
@@ -136,7 +136,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 		this.stopSendingMessage = false;
 
 		for (int i = 0; i < numThreads; i++) {
-			log.debug("Starting AsyncThread " + (i + 1));
+			log.debug("Now starting AsyncThread " + (i + 1));
 			WorkerThread workerThread = new WorkerThread();
 			workerThread.setName(this.workerID + "_th" + i);
 			workerThread.start();
@@ -189,6 +189,8 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 				Partition partition = new Partition(partitionID);
 				partition.loadPartitionDataFromEVFile(filename);
+				partition.loadOutgoingVerticesFromFile(filename);
+				log.info("receive partition:" + partition.getPartitionInfo());
 				this.partitions.put(partitionID, partition);
 			}
 		}
@@ -206,6 +208,8 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 			Partition partition = new Partition(partitionID);
 			partition.loadPartitionDataFromEVFile(filename);
+			partition.loadOutgoingVerticesFromFile(filename);
+			log.info("receive partition:" + partition.getPartitionInfo());
 			this.partitions.put(partitionID, partition);
 		}
 
@@ -497,7 +501,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 			String masterURL = "//" + coordinatorMachineName + "/" + KV.COORDINATOR_SERVICE_NAME;
 			Worker2Coordinator worker2Coordinator = (Worker2Coordinator) Naming.lookup(masterURL);
-			Worker worker = new WorkerSyncImpl();
+			Worker worker = new WorkerAsyncImpl();
 			Worker2Coordinator coordinatorProxy = worker2Coordinator.register(worker,
 					worker.getWorkerID(), worker.getNumThreads());
 

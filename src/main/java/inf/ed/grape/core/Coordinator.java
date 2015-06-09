@@ -155,7 +155,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	}
 
 	public void sendQuery(Query query) throws RemoteException {
-		log.debug("Coordinator: sendWorkerPartitionInfo");
+		log.debug("Coordinator: sendQuery");
 		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
 			WorkerProxy workerProxy = entry.getValue();
 			workerProxy.setQuery(query);
@@ -280,7 +280,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 
 	public void loadGraph(String graphFilename) throws RemoteException {
 
-		log.info("load Graph = " + graphFilename);
+		log.info("load Graph = " + graphFilename + ", strategy=" + KV.PARTITION_STRATEGY);
 
 		startTime = System.currentTimeMillis();
 
@@ -312,6 +312,8 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	 */
 	public void assignDistributedPartitions() {
 
+		log.info("begin assign distributed partitions.");
+
 		partitioner = new Partitioner(KV.PARTITION_STRATEGY);
 		partitionWorkerMap = new HashMap<Integer, String>();
 
@@ -328,8 +330,8 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 			double ratio = ((double) (numThreads)) / totalWorkerThreads.get();
 			int numPartitionsToAssign = (int) (ratio * totalPartitions);
 
-			log.info("Worker %s with %d threads got %d partition.", workerProxy.getWorkerID(),
-					numThreads, numPartitionsToAssign);
+			log.info("Worker " + workerProxy.getWorkerID() + " with " + numThreads
+					+ " threads got " + numPartitionsToAssign + " partition.");
 
 			List<Integer> workerPartitionIDs = new ArrayList<Integer>();
 			for (int i = 0; i < numPartitionsToAssign; i++) {
@@ -337,8 +339,8 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 					partitionID = partitioner.getNextPartitionID();
 
 					activeWorkerSet.add(entry.getKey());
-					log.info("Adding partition %d to worker %s.", partitionID,
-							workerProxy.getWorkerID());
+					log.info("Adding partition " + partitionID + " to worker "
+							+ workerProxy.getWorkerID());
 					workerPartitionIDs.add(partitionID);
 					partitionWorkerMap.put(partitionID, workerProxy.getWorkerID());
 				}
@@ -363,8 +365,8 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 				WorkerProxy workerProxy = workerMapIter.next().getValue();
 
 				activeWorkerSet.add(workerProxy.getWorkerID());
-				log.info("Adding partition %d to worker %s.", partitionID,
-						workerProxy.getWorkerID());
+				log.info("Adding partition " + partitionID + " to worker "
+						+ workerProxy.getWorkerID());
 				partitionWorkerMap.put(partitionID, workerProxy.getWorkerID());
 				workerProxy.addPartitionID(partitionID);
 

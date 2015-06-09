@@ -1,5 +1,6 @@
 package inf.ed.grape.graph;
 
+import inf.ed.grape.util.IO;
 import inf.ed.graph.structure.Edge;
 import inf.ed.graph.structure.Graph;
 import inf.ed.graph.structure.OrthogonalGraph;
@@ -33,12 +34,12 @@ public class Partition implements Serializable {
 
 	public Partition(int partitionID) {
 		this.partitionID = partitionID;
-		this.outgoingVertices = new IntOpenHashSet();
 	}
 
 	public boolean loadPartitionDataFromEVFile(String filePath) {
 		this.graph = new OrthogonalGraph<VertexOString>(VertexOString.class);
 		this.graph.loadGraphFromVEFile(filePath);
+
 		return true;
 	}
 
@@ -56,6 +57,10 @@ public class Partition implements Serializable {
 
 	public boolean isVirtualVertex(int vertexID) {
 		return this.outgoingVertices.contains(vertexID);
+	}
+
+	public void loadOutgoingVerticesFromFile(String filePath) {
+		this.outgoingVertices = IO.loadIntSetFromFile(filePath + ".o");
 	}
 
 	public String getPartitionInfo() {

@@ -1,8 +1,5 @@
-7	f
-8	yf
-9	yb
-10	f
-11	sp
-3	sp
+5	f
 6	sp
 12	yf
+13	yb
+4	yf

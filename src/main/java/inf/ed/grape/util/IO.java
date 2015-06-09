@@ -1,5 +1,8 @@
 package inf.ed.grape.util;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -47,6 +50,39 @@ public class IO {
 				+ (System.currentTimeMillis() - startTime) + " ms");
 
 		return retMap;
+	}
+
+	static public IntSet loadIntSetFromFile(String filename) {
+
+		IntSet retSet = new IntOpenHashSet();
+
+		log.info("loading set from " + filename + " with stream scanner.");
+
+		long startTime = System.currentTimeMillis();
+
+		FileInputStream fileInputStream = null;
+		Scanner sc = null;
+
+		try {
+			fileInputStream = new FileInputStream(filename);
+			sc = new Scanner(fileInputStream, "UTF-8");
+			while (sc.hasNextInt()) {
+				retSet.add(sc.nextInt());
+			}
+			if (fileInputStream != null) {
+				fileInputStream.close();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		if (sc != null) {
+			sc.close();
+		}
+
+		log.info(filename + " loaded to set. with size =  " + retSet.size() + ", using "
+				+ (System.currentTimeMillis() - startTime) + " ms");
+
+		return retSet;
 	}
 
 	static public <K, V> void writeMapToFile(Map<K, V> map, String filename) {

@@ -34,7 +34,7 @@ public class Partitioner {
 	private int strategy;
 
 	/** Partition id */
-	private static int currentPartitionId = 1;
+	private static int currentPartitionId = 0;
 
 	static Logger log = LogManager.getLogger(Partitioner.class);
 
@@ -72,7 +72,7 @@ public class Partitioner {
 		try {
 			return IO.loadInt2IntMapFromFile(KV.GRAPH_FILE_PATH + ".vvp");
 		} catch (IOException e) {
-			log.error("load virtual vertex 2 partition map failed.");
+			log.error("load virtual vertex to partition map failed.");
 			e.printStackTrace();
 		}
 		return null;

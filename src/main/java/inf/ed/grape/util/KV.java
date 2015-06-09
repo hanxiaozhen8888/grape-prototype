@@ -35,43 +35,33 @@ public class KV {
 			MAX_THREAD_LIMITATION = Config.getInstance().getIntProperty(
 					"THREAD_LIMIT_ON_EACH_MACHINE");
 
-			GRAPH_FILE_PATH = Config.getInstance().getStringProperty(
-					"GRAPH_FILE_PATH");
+			GRAPH_FILE_PATH = Config.getInstance().getStringProperty("GRAPH_FILE_PATH");
 
 			OUTPUT_DIR = Config.getInstance().getStringProperty("OUTPUT_DIR");
 
-			PARTITION_COUNT = Config.getInstance().getIntProperty(
-					"PARTITION_COUNT");
+			PARTITION_COUNT = Config.getInstance().getIntProperty("PARTITION_COUNT");
 
-			PARTITION_COUNT = Config.getInstance().getIntProperty(
-					"PARTITION_STRATEGY");
+			PARTITION_STRATEGY = Config.getInstance().getIntProperty("PARTITION_STRATEGY");
 
-			ENABLE_COORDINATOR = Config.getInstance().getBooleanProperty(
-					"ENABLE_COORDINATOR");
+			ENABLE_COORDINATOR = Config.getInstance().getBooleanProperty("ENABLE_COORDINATOR");
 
-			ENABLE_ASSEMBLE = Config.getInstance().getBooleanProperty(
-					"ENABLE_ASSEMBLE");
+			ENABLE_ASSEMBLE = Config.getInstance().getBooleanProperty("ENABLE_ASSEMBLE");
 
-			ENABLE_SYNC = Config.getInstance()
-					.getBooleanProperty("ENABLE_SYNC");
+			ENABLE_SYNC = Config.getInstance().getBooleanProperty("ENABLE_SYNC");
 
-			ENABLE_LOCAL_BATCH = Config.getInstance().getBooleanProperty(
-					"ENABLE_LOCAL_BATCH");
+			ENABLE_LOCAL_BATCH = Config.getInstance().getBooleanProperty("ENABLE_LOCAL_BATCH");
 
 			ENABLE_LOCAL_INCREMENTAL = Config.getInstance().getBooleanProperty(
 					"ENABLE_LOCAL_INCREMENTAL");
 
-			ENABLE_LOCAL_MESSAGE = Config.getInstance().getBooleanProperty(
-					"ENABLE_LOCAL_MESSAGE");
+			ENABLE_LOCAL_MESSAGE = Config.getInstance().getBooleanProperty("ENABLE_LOCAL_MESSAGE");
 
-			CLASS_LOCAL_COMPUTE_TASK = Config.getInstance().getStringProperty(
-					"CLASS_LOCAL_COMPUTE");
+			CLASS_LOCAL_COMPUTE_TASK = Config.getInstance()
+					.getStringProperty("CLASS_LOCAL_COMPUTE");
 
-			CLASS_RESULT = Config.getInstance().getStringProperty(
-					"CLASS_RESULT");
+			CLASS_RESULT = Config.getInstance().getStringProperty("CLASS_RESULT");
 
-			CLASS_MESSAGE = Config.getInstance().getStringProperty(
-					"CLASS_MESSAGE");
+			CLASS_MESSAGE = Config.getInstance().getStringProperty("CLASS_MESSAGE");
 
 			CLASS_QUERY = Config.getInstance().getStringProperty("CLASS_QUERY");
 

@@ -58,13 +58,14 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 * Instantiates a new worker proxy.
 	 */
 
-	public WorkerProxy(Worker worker, String workerID, int numWorkerThreads,
-			Coordinator coordinator) throws AccessException, RemoteException {
+	public WorkerProxy(Worker worker, String workerID, int numWorkerThreads, Coordinator coordinator)
+			throws AccessException, RemoteException {
 		this.worker = worker;
 		this.workerID = workerID;
 		this.numWorkerThreads = numWorkerThreads;
 		this.coordinator = coordinator;
 		partitionList = new LinkedBlockingQueue<Partition>();
+		partitionIDList = new LinkedBlockingQueue<Integer>();
 		t = new Thread(this);
 		t.start();
 	}
@@ -78,8 +79,7 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 				log.info("Partition taken");
 				worker.addPartition(partition);
 			} catch (RemoteException e) {
-				log.fatal("Remote Exception received from the Worker "
-						+ workerID);
+				log.fatal("Remote Exception received from the Worker " + workerID);
 				log.info("RemoteException: Removing Worker from Master");
 				coordinator.removeWorker(workerID);
 			} catch (InterruptedException e) {
@@ -194,10 +194,9 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
-	public void setWorkerPartitionInfo(
-			Map<Integer, Integer> vertexIdToPartitionId,
-			Map<Integer, String> mapPartitionIdToWorkerId,
-			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException {
+	public void setWorkerPartitionInfo(Map<Integer, Integer> vertexIdToPartitionId,
+			Map<Integer, String> mapPartitionIdToWorkerId, Map<String, Worker> mapWorkerIdToWorker)
+			throws RemoteException {
 
 		log.debug("workerProxy.totalPartitions=" + totalPartitions);
 
@@ -228,8 +227,8 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	 * @see system.Worker2Master#register(system.Worker, java.lang.String, int)
 	 */
 	@Override
-	public Worker2Coordinator register(Worker worker, String workerID,
-			int numWorkerThreads) throws RemoteException {
+	public Worker2Coordinator register(Worker worker, String workerID, int numWorkerThreads)
+			throws RemoteException {
 		return null;
 	}
 
@@ -253,8 +252,8 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	}
 
 	@Override
-	public void localComputeCompleted(String workerID,
-			Set<String> activeWorkerIDs) throws RemoteException {
+	public void localComputeCompleted(String workerID, Set<String> activeWorkerIDs)
+			throws RemoteException {
 		this.coordinator.localComputeCompleted(workerID, activeWorkerIDs);
 	}
 
@@ -267,8 +266,8 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	}
 
 	@Override
-	public void sendPartialResult(String workerID,
-			Map<Integer, Result> mapPartitionID2Result) throws RemoteException {
+	public void sendPartialResult(String workerID, Map<Integer, Result> mapPartitionID2Result)
+			throws RemoteException {
 		this.coordinator.receivePartialResults(workerID, mapPartitionID2Result);
 	}
 }
