@@ -7,8 +7,6 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class Result implements Serializable {
 
-	private static final long serialVersionUID = -2747898136416052009L;
-
 	static Logger log = LogManager.getLogger(Result.class);
 
 	/** a function how to assemble partial results to a final result. */

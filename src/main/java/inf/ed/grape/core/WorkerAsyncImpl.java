@@ -189,7 +189,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 				Partition partition = new Partition(partitionID);
 				partition.loadPartitionDataFromEVFile(filename);
-				partition.loadOutgoingVerticesFromFile(filename);
+				partition.loadIncomingVerticesFromFile(filename);
 				log.info("receive partition:" + partition.getPartitionInfo());
 				this.partitions.put(partitionID, partition);
 			}
@@ -208,7 +208,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 			Partition partition = new Partition(partitionID);
 			partition.loadPartitionDataFromEVFile(filename);
-			partition.loadOutgoingVerticesFromFile(filename);
+			partition.loadIncomingVerticesFromFile(filename);
 			log.info("receive partition:" + partition.getPartitionInfo());
 			this.partitions.put(partitionID, partition);
 		}

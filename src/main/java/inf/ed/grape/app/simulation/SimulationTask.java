@@ -23,11 +23,6 @@ public class SimulationTask extends LocalComputeTask {
 	private HashMap<Integer, HashSet<Integer>> suc; // node -> children
 	private HashSet<Integer> PSET; // set of all parent nodes
 
-	public HashMap<Integer, HashSet<Integer>> toRet = new HashMap<Integer, HashSet<Integer>>();
-	public HashSet<Integer> gil = new HashSet<Integer>();
-	public HashMap<Integer, HashSet<Integer>> rvset = new HashMap<Integer, HashSet<Integer>>();
-	public HashSet<Integer> truth = new HashSet<Integer>();
-
 	static Logger log = LogManager.getLogger(SimulationTask.class);
 
 	private Pattern pattern;
@@ -45,179 +40,6 @@ public class SimulationTask extends LocalComputeTask {
 		this.suc = new HashMap<Integer, HashSet<Integer>>(); // node -> children
 		this.PSET = new HashSet<Integer>(); // set of all parent nodes
 	}
-
-	// /**
-	// * this procedure computes simulation relation between P and G G inclueds
-	// a
-	// * set of output nodes which should not be included in the results
-	// *
-	// * @param P
-	// * @param G
-	// * @return
-	// */
-	// public ArrayList<Message> EfficientSimilarity(cg_graph P, cg_graph G) {
-	// ArrayList<Message> messages = new ArrayList<Message>();
-	// System.out.println("Started partial evaluation, total size: " +
-	// P.vertexSet().size());
-	// int vnum = 0;
-	// for (cg_node u : P.vertexSet()) {
-	// if (vnum % 10000 == 0)
-	// System.out.println(vnum + "\r\r");
-	// HashSet<cg_node> posmat = new HashSet<cg_node>(); // a node set
-	// // which
-	// // contains
-	// // nodes that
-	// // possibly
-	// // match parents
-	// // of v
-	// HashSet<cg_node> remove = new HashSet<cg_node>(); // a node set
-	// // which
-	// // contains
-	// // nodes that
-	// // can not match
-	// // any parent
-	// // node of v
-	// remove.addAll(this.PSET); // all parents node
-	//
-	// HashSet<cg_node> simset = this.sim.get(u); // sim(u)
-	// if (simset == null) {
-	// simset = new HashSet<cg_node>(); // initialize simset
-	// }
-	//
-	// if (P.outDegreeOf(u) == 0) {
-	// for (cg_node v : G.vertexSet()) {
-	// if (this.check(u.a, v.a) && v.isOut == false) { //
-	// simset.add(v);
-	// truth.add(v);
-	// if (!this.pre.get(v).isEmpty()) { // v.parent is not
-	// // empty
-	// posmat.addAll(this.pre.get(v)); // add all v's
-	// // parent to posmat
-	// }
-	// }
-	// }
-	// } else {
-	// for (cg_node v : G.vertexSet()) {
-	// // String lv = attrG.get(v);
-	// if (this.check(u.a, v.a)) {
-	// if (G.outDegreeOf(v) != 0 && v.isOut == true) {
-	// simset.add(v);
-	// if (!this.pre.get(v).isEmpty()) {
-	// posmat.addAll(this.pre.get(v));
-	// }
-	// } else if (v.isInn == true) {
-	// messages.add(new Message(u, v));
-	// }
-	// }
-	// }
-	// }
-	// this.sim.put(u, simset);
-	// remove.removeAll(posmat);
-	// this.premv.put(u, remove);
-	// }
-	//
-	// Queue<cg_node> q = new LinkedList<cg_node>(); // those node with non
-	// // empty premv
-	// for (cg_node n : this.premv.keySet()) {
-	// HashSet<cg_node> hs = this.premv.get(n);
-	// if (!hs.isEmpty()) {
-	// q.add(n);
-	// }
-	// }
-	//
-	// // check for isolated node
-	// while (!q.isEmpty()) {
-	// System.out.println("queue size is " + q.size() + "\r\r");
-	// cg_node n = q.poll();
-	// for (cg_edge e : P.incomingEdgesOf(n)) {
-	// cg_node u = P.getEdgeSource(e);
-	// HashSet<cg_node> sim = this.sim.get(u);
-	// for (cg_node w : this.premv.get(n)) {
-	// if (sim.contains(w)) {
-	// sim.remove(w); // w in G can not match u in P
-	// if (w.isInn == true) {
-	// messages.add(new Message(u, w));
-	// }
-	// for (cg_edge ee : G.incomingEdgesOf(w)) {
-	// cg_node ww = G.getEdgeSource(ee);
-	// HashSet<cg_node> cset = new HashSet<cg_node>();
-	// cset.addAll(this.suc.get(ww));
-	// cset.retainAll(sim);
-	// if (cset.isEmpty()) {
-	// this.premv.get(u).add(ww);
-	// if (!q.contains(u)) {
-	// q.add(u);
-	// }
-	// }
-	// }
-	// }
-	// }
-	// }
-	// this.premv.get(n).clear();
-	// }
-	// return messages;
-	// }
-	//
-	// public ArrayList<Message> remove(cg_node status, cg_node node, cg_graph
-	// P, cg_graph G) {
-	// ArrayList<Message> messages = new ArrayList<Message>();
-	// HashSet<cg_node> simu = this.sim.get(status);
-	// Queue<cg_node> q = new LinkedList<cg_node>(); // those node with non
-	// // empty premv
-	// // assert(simu.contains(node));
-	// if (!simu.contains(node))
-	// return messages;
-	// simu.remove(node); // node in G can not match status in P
-	// // if (this.sim.get(status).contains(node))
-	// // TODO: double-check here
-	// if (node.isInn == true) {
-	// System.out.println("IS INN NODE");
-	// messages.add(new Message(status, node));
-	// }
-	//
-	// for (cg_edge ee : G.incomingEdgesOf(node)) {
-	// cg_node ww = G.getEdgeSource(ee);
-	// HashSet<cg_node> cset = new HashSet<cg_node>();
-	// cset.addAll(this.suc.get(ww));
-	// cset.retainAll(simu);
-	// if (cset.isEmpty()) {
-	// this.premv.get(status).add(ww);
-	// if (!q.contains(status)) {
-	// q.add(status);
-	// }
-	// }
-	// }
-	//
-	// while (!q.isEmpty()) {
-	// cg_node n = q.poll();
-	// for (cg_edge e : P.incomingEdgesOf(n)) {
-	// cg_node u = P.getEdgeSource(e);
-	// HashSet<cg_node> sim = this.sim.get(u);
-	// for (cg_node w : this.premv.get(n)) {
-	// if (sim.contains(w)) {
-	// sim.remove(w); // w in G can not match u in P
-	// if (w.isInn == true) {
-	// messages.add(new Message(u, w));
-	// }
-	// for (cg_edge ee : G.incomingEdgesOf(w)) {
-	// cg_node ww = G.getEdgeSource(ee);
-	// HashSet<cg_node> cset = new HashSet<cg_node>();
-	// cset.addAll(this.suc.get(ww));
-	// cset.retainAll(sim);
-	// if (cset.isEmpty()) {
-	// this.premv.get(u).add(ww);
-	// if (!q.contains(u)) {
-	// q.add(u);
-	// }
-	// }
-	// }
-	// }
-	// }
-	// }
-	// this.premv.get(n).clear();
-	// }
-	// return messages;
-	// }
 
 	public String displayResult() {
 		String ret = "";
@@ -262,7 +84,6 @@ public class SimulationTask extends LocalComputeTask {
 		log.debug("Init finished. Start partial evaluation. pattern vertex size = "
 				+ pattern.getGraph().vertexSize());
 
-		int vnum = 0;
 		for (int u : pattern.getGraph().allVertices().keySet()) {
 
 			HashSet<Integer> posmat = new HashSet<Integer>();
@@ -279,10 +100,15 @@ public class SimulationTask extends LocalComputeTask {
 
 			if (pattern.getGraph().getChildren(u).size() == 0) {
 				for (int v : partition.getGraph().allVertices().keySet()) {
-					if (partition.getGraph().getVertex(v).match(pattern.getGraph().getVertex(u))
-							&& partition.isVirtualVertex(v) == false) { //
+					log.info("match:"
+							+ pattern.getGraph().getVertex(u).toString()
+							+ " v.s. "
+							+ partition.getGraph().getVertex(v).toString()
+							+ ", match?"
+							+ partition.getGraph().getVertex(v)
+									.match(pattern.getGraph().getVertex(u)));
+					if (partition.getGraph().getVertex(v).match(pattern.getGraph().getVertex(u))) { //
 						simset.add(v);
-						truth.add(v);
 						if (!this.pre.get(v).isEmpty()) {
 							/* v.parent is not empty */
 							posmat.addAll(this.pre.get(v));
@@ -292,25 +118,40 @@ public class SimulationTask extends LocalComputeTask {
 				}
 			} else {
 				for (int v : partition.getGraph().allVertices().keySet()) {
+
+					log.info("match:"
+							+ pattern.getGraph().getVertex(u).toString()
+							+ " v.s. "
+							+ partition.getGraph().getVertex(v).toString()
+							+ ", match?"
+							+ partition.getGraph().getVertex(v)
+									.match(pattern.getGraph().getVertex(u)));
+
 					if (partition.getGraph().getVertex(v).match(pattern.getGraph().getVertex(u))) {
-						// FIXME: why need to check out degree????
-						// if (G.outDegreeOf(v) != 0 && v.isOut == true) {
-						if (partition.isVirtualVertex(v))
+						if (!partition.getGraph().getChildren(v).isEmpty()
+								|| partition.isIncomingVertex(v)) {
 							simset.add(v);
-						if (!this.pre.get(v).isEmpty()) {
-							posmat.addAll(this.pre.get(v));
+							if (!this.pre.get(v).isEmpty()) {
+								posmat.addAll(this.pre.get(v));
+							}
 						}
-					} else {
+					} else if (partition.isIncomingVertex(v)) {
 						Message<Pair<Integer>> m = new Message<Pair<Integer>>(
 								this.getPartitionID(), v, new Pair<Integer>(u, v));
 						generatedMessages.add(m);
 					}
 				}
 			}
+
+			log.info("u=" + u + "simset=" + simset.toString());
+
 			this.sim.put(u, simset);
 			remove.removeAll(posmat);
 			this.premv.put(u, remove);
 		}
+
+		log.info("middle result:");
+		log.info(this.displayResult());
 
 		Queue<Integer> q = new LinkedList<Integer>(); // those node with non
 														// empty premv
@@ -330,7 +171,7 @@ public class SimulationTask extends LocalComputeTask {
 				for (int w : this.premv.get(n)) {
 					if (sim.contains(w)) {
 						sim.remove(w); // w in G can not match u in P
-						if (partition.isVirtualVertex(w)) {
+						if (partition.isIncomingVertex(w)) {
 							Message<Pair<Integer>> m = new Message<Pair<Integer>>(
 									this.getPartitionID(), w, new Pair<Integer>(u, w));
 							generatedMessages.add(m);
@@ -351,6 +192,11 @@ public class SimulationTask extends LocalComputeTask {
 			}
 			this.premv.get(n).clear();
 		}
+
+		log.info("init compute finished. partial evaluation result:");
+		log.debug(this.displayResult());
+		log.debug("message size:" + this.generatedMessages.size());
+		log.debug(generatedMessages.toString());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -375,7 +221,7 @@ public class SimulationTask extends LocalComputeTask {
 			simu.remove(u); // node in G can not match status in P
 			// if (this.sim.get(status).contains(node))
 			// TODO: double-check here
-			if (partition.isVirtualVertex(v)) {
+			if (partition.isIncomingVertex(v)) {
 				// System.out.println();
 				log.warn("virtual vertex: " + v);
 				Message<Pair<Integer>> m = new Message<Pair<Integer>>(this.getPartitionID(), v,
@@ -402,12 +248,12 @@ public class SimulationTask extends LocalComputeTask {
 					for (int w : this.premv.get(n)) {
 						if (sim.contains(w)) {
 							sim.remove(w); // w in G can not match u in P
-							if (partition.isVirtualVertex(w)) {
+							if (partition.isIncomingVertex(w)) {
 								Message<Pair<Integer>> m = new Message<Pair<Integer>>(
 										this.getPartitionID(), w, new Pair<Integer>(uu, w));
 								generatedMessages.add(m);
 							}
-							for(int ww:partition.getGraph().getParents(w)){
+							for (int ww : partition.getGraph().getParents(w)) {
 								HashSet<Integer> cset = new HashSet<Integer>();
 								cset.addAll(this.suc.get(ww));
 								cset.retainAll(sim);
@@ -425,6 +271,11 @@ public class SimulationTask extends LocalComputeTask {
 			}
 
 		}
+
+		log.info("incremental compute finished. Ievaluation result:");
+		log.debug(this.displayResult());
+		log.debug("message size:" + this.generatedMessages.size());
+		log.debug(generatedMessages.toString());
 	}
 
 }

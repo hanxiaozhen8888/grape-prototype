@@ -4,5 +4,4 @@
 10	f
 11	sp
 3	sp
-6	sp
-12	yf
+4	yf

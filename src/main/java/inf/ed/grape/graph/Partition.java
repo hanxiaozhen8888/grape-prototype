@@ -31,6 +31,7 @@ public class Partition implements Serializable {
 	Graph<? extends Vertex, ? extends Edge> graph;
 
 	private IntSet outgoingVertices;
+	private IntSet incomingVertices;
 
 	public Partition(int partitionID) {
 		this.partitionID = partitionID;
@@ -59,16 +60,31 @@ public class Partition implements Serializable {
 		this.outgoingVertices = outgoingVertices;
 	}
 
-	public boolean isVirtualVertex(int vertexID) {
+	public boolean isOutVertex(int vertexID) {
 		return this.outgoingVertices.contains(vertexID);
+	}
+
+	public boolean isIncomingVertex(int vertexID) {
+		return this.incomingVertices.contains(vertexID);
 	}
 
 	public void loadOutgoingVerticesFromFile(String filePath) {
 		this.outgoingVertices = IO.loadIntSetFromFile(filePath + ".o");
 	}
 
+	public void loadIncomingVerticesFromFile(String filePath) {
+		this.incomingVertices = IO.loadIntSetFromFile(filePath + ".i");
+	}
+
 	public String getPartitionInfo() {
-		return "pID = " + this.partitionID + " | vertices = " + this.graph.vertexSize()
-				+ " | edges = " + this.graph.edgeSize() + " | ov = " + outgoingVertices.size();
+		String ret = "pID = " + this.partitionID + " | vertices = " + this.graph.vertexSize()
+				+ " | edges = " + this.graph.edgeSize();
+		if (outgoingVertices != null) {
+			ret += " | ov = " + outgoingVertices.size();
+		}
+		if (incomingVertices != null) {
+			ret += " | iv = " + incomingVertices.size();
+		}
+		return ret;
 	}
 }
