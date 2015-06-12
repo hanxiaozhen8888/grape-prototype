@@ -1,4 +1,4 @@
-0	YB
-1	YF
-2	F
-3	SF
+0	yb
+1	yf
+2	f
+3	sp

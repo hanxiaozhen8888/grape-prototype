@@ -60,7 +60,11 @@ public class Partition implements Serializable {
 		this.outgoingVertices = outgoingVertices;
 	}
 
-	public boolean isOutVertex(int vertexID) {
+	// public boolean isOutgoingVertex(int vertexID) {
+	// return this.outgoingVertices.contains(vertexID);
+	// }
+
+	public boolean isVirtualVertex(int vertexID) {
 		return this.outgoingVertices.contains(vertexID);
 	}
 

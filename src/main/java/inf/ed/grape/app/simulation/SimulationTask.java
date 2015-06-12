@@ -99,15 +99,10 @@ public class SimulationTask extends LocalComputeTask {
 			}
 
 			if (pattern.getGraph().getChildren(u).size() == 0) {
+				// u has no children.
 				for (int v : partition.getGraph().allVertices().keySet()) {
-					log.info("match:"
-							+ pattern.getGraph().getVertex(u).toString()
-							+ " v.s. "
-							+ partition.getGraph().getVertex(v).toString()
-							+ ", match?"
-							+ partition.getGraph().getVertex(v)
-									.match(pattern.getGraph().getVertex(u)));
-					if (partition.getGraph().getVertex(v).match(pattern.getGraph().getVertex(u))) { //
+					if (partition.getGraph().getVertex(v).match(pattern.getGraph().getVertex(u))) {
+						// regardless v has child or not.
 						simset.add(v);
 						if (!this.pre.get(v).isEmpty()) {
 							/* v.parent is not empty */
@@ -117,41 +112,33 @@ public class SimulationTask extends LocalComputeTask {
 					}
 				}
 			} else {
+				// u has children, then v should have children.
 				for (int v : partition.getGraph().allVertices().keySet()) {
-
-					log.info("match:"
-							+ pattern.getGraph().getVertex(u).toString()
-							+ " v.s. "
-							+ partition.getGraph().getVertex(v).toString()
-							+ ", match?"
-							+ partition.getGraph().getVertex(v)
-									.match(pattern.getGraph().getVertex(u)));
-
 					if (partition.getGraph().getVertex(v).match(pattern.getGraph().getVertex(u))) {
 						if (!partition.getGraph().getChildren(v).isEmpty()
-								|| partition.isIncomingVertex(v)) {
+								|| partition.isVirtualVertex(v)) {
+							// v has children or v is virtual vertex.
 							simset.add(v);
 							if (!this.pre.get(v).isEmpty()) {
 								posmat.addAll(this.pre.get(v));
 							}
+						} else if (partition.isIncomingVertex(v)) {
+							// else v is a match of u, but has no children.
+							log.error("Never run into this line");
+							Message<Pair<Integer>> m = new Message<Pair<Integer>>(
+									this.getPartitionID(), v, new Pair<Integer>(u, v));
+							generatedMessages.add(m);
 						}
-					} else if (partition.isIncomingVertex(v)) {
-						Message<Pair<Integer>> m = new Message<Pair<Integer>>(
-								this.getPartitionID(), v, new Pair<Integer>(u, v));
-						generatedMessages.add(m);
 					}
 				}
 			}
 
-			log.info("u=" + u + "simset=" + simset.toString());
-
 			this.sim.put(u, simset);
 			remove.removeAll(posmat);
 			this.premv.put(u, remove);
-		}
 
-		log.info("middle result:");
-		log.info(this.displayResult());
+			log.info("u=" + u + ", sim= " + simset.toString() + " premv= " + remove.toString());
+		}
 
 		Queue<Integer> q = new LinkedList<Integer>(); // those node with non
 														// empty premv
@@ -162,19 +149,30 @@ public class SimulationTask extends LocalComputeTask {
 			}
 		}
 
+		log.debug("current Queue=" + q.toString());
+
 		// check for isolated node
 		while (!q.isEmpty()) {
-			log.debug("queue size is " + q.size() + "\r\r");
+
 			int n = q.poll();
 			for (int u : pattern.getGraph().getParents(n)) {
 				HashSet<Integer> sim = this.sim.get(u);
 				for (int w : this.premv.get(n)) {
 					if (sim.contains(w)) {
 						sim.remove(w); // w in G can not match u in P
-						if (partition.isIncomingVertex(w)) {
-							Message<Pair<Integer>> m = new Message<Pair<Integer>>(
-									this.getPartitionID(), w, new Pair<Integer>(u, w));
-							generatedMessages.add(m);
+
+						log.debug("remove " + w);
+						if (!partition.isIncomingVertex(w) && !partition.isVirtualVertex(w)) {
+							log.debug(w + "is inner vertex");
+							for (int parent : partition.getGraph().getParents(w)) {
+								if (partition.isIncomingVertex(parent)) {
+									log.debug("add new message: n=" + n + ", u=" + u + ", sim="
+											+ sim + ", w=" + w + ", parent = " + parent);
+									Message<Pair<Integer>> m = new Message<Pair<Integer>>(
+											this.getPartitionID(), w, new Pair<Integer>(u, parent));
+									generatedMessages.add(m);
+								}
+							}
 						}
 						for (int ww : partition.getGraph().getParents(w)) {
 							HashSet<Integer> cset = new HashSet<Integer>();
