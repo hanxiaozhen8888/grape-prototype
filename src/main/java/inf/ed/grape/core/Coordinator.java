@@ -3,7 +3,6 @@ package inf.ed.grape.core;
 import inf.ed.grape.communicate.Client2Coordinator;
 import inf.ed.grape.communicate.Worker2Coordinator;
 import inf.ed.grape.communicate.WorkerProxy;
-import inf.ed.grape.graph.Partition;
 import inf.ed.grape.interfaces.Query;
 import inf.ed.grape.interfaces.Result;
 import inf.ed.grape.util.KV;
@@ -122,7 +121,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	public Worker2Coordinator register(Worker worker, String workerID, int numWorkerThreads)
 			throws RemoteException {
 
-		log.debug("Coordinator: Register");
+		log.debug("Register");
 		totalWorkerThreads.getAndAdd(numWorkerThreads);
 		WorkerProxy workerProxy = new WorkerProxy(worker, workerID, numWorkerThreads, this);
 		workerProxyMap.put(workerID, workerProxy);
@@ -146,7 +145,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	 *             the remote exception
 	 */
 	public void sendWorkerPartitionInfo() throws RemoteException {
-		log.debug("Coordinator: sendWorkerPartitionInfo");
+		log.debug("sendWorkerPartitionInfo");
 		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
 			WorkerProxy workerProxy = entry.getValue();
 			workerProxy.setWorkerPartitionInfo(virtualVertexPartitionMap, partitionWorkerMap,
@@ -155,7 +154,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	}
 
 	public void sendQuery(Query query) throws RemoteException {
-		log.debug("Coordinator: sendQuery");
+		log.debug("distribute Query to workers.");
 		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
 			WorkerProxy workerProxy = entry.getValue();
 			workerProxy.setQuery(query);
@@ -177,7 +176,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 			coordinator = new Coordinator();
 			Registry registry = LocateRegistry.createRegistry(KV.RMI_PORT);
 			registry.rebind(KV.COORDINATOR_SERVICE_NAME, coordinator);
-			log.info("Coordinator instance is bound to " + KV.RMI_PORT + " and ready.");
+			log.info("instance is bound to " + KV.RMI_PORT + " and ready.");
 		} catch (RemoteException e) {
 			Coordinator.log.error(e);
 			e.printStackTrace();
@@ -191,8 +190,6 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	 *             the remote exception
 	 */
 	public void halt() throws RemoteException {
-		// healthManager.exit();
-		log.info("Master: halt");
 		log.debug("Worker Proxy Map " + workerProxyMap);
 
 		for (Map.Entry<String, WorkerProxy> entry : workerProxyMap.entrySet()) {
@@ -274,7 +271,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 			}
 		}
 		java.util.Date date = new java.util.Date();
-		log.info("Master goes down now at :" + new Timestamp(date.getTime()));
+		log.info("goes down now at :" + new Timestamp(date.getTime()));
 		System.exit(0);
 	}
 
@@ -384,8 +381,8 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	 * @throws RemoteException
 	 *             the remote exception
 	 */
-	public synchronized void nextLocalCompute() throws RemoteException {
-		log.info("Coordinator: next local compute. superstep = " + superstep);
+	public void nextLocalCompute() throws RemoteException {
+		log.info("next local compute. superstep = " + superstep);
 
 		this.workerAcknowledgementSet.clear();
 		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
@@ -400,10 +397,12 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	public synchronized void localComputeCompleted(String workerID, Set<String> activeWorkerIDs)
 			throws RemoteException {
 
-		log.info("Coordinator received activeWorkerIDs from worker " + workerID + " saying: "
-				+ activeWorkerIDs);
-		this.activeWorkerSet.addAll(activeWorkerIDs);
+		log.info("receive acknowledgement from worker " + workerID + "\n saying activeWorkers: "
+				+ activeWorkerIDs.toString());
 
+		// in synchronised model, coordinator receive activeWorkers and
+		// prepare for next round of local computations.
+		this.activeWorkerSet.addAll(activeWorkerIDs);
 		this.workerAcknowledgementSet.remove(workerID);
 
 		if (this.workerAcknowledgementSet.size() == 0) {
@@ -422,11 +421,9 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 		 * TODO: send flag to coordinator. the coordinator determined the next
 		 * step, whether save results or assemble results.
 		 * 
-		 * TODO: is assemble enabled, then assemble results from workers. and
+		 * TODO: if assemble enabled, then assemble results from workers. and
 		 * write results to file.
 		 */
-
-		log.debug("Coordinator: fiishLocalCompute");
 
 		this.resultMap.clear();
 
@@ -442,8 +439,8 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 
 	}
 
-	public void receivePartialResults(String workerID, Map<Integer, Result> mapPartitionID2Result) {
-		log.info("assemble a final result");
+	public synchronized void receivePartialResults(String workerID,
+			Map<Integer, Result> mapPartitionID2Result) {
 
 		for (Entry<Integer, Result> entry : mapPartitionID2Result.entrySet()) {
 			resultMap.put(entry.getKey(), entry.getValue());
@@ -454,6 +451,7 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 		if (this.workerAcknowledgementSet.size() == 0) {
 
 			/** receive all the partial results, assemble them. */
+			log.info("assemble a final result");
 
 			try {
 
@@ -481,7 +479,44 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	@Override
 	public void sendPartialResult(String workerID, Map<Integer, Result> mapPartitionID2Result)
 			throws RemoteException {
-		// TODO Auto-generated method stub
+		this.receivePartialResults(workerID, mapPartitionID2Result);
+	}
 
+	@Override
+	public synchronized void vote2halt(String workerID) throws RemoteException {
+		log.info("receive vote2halt signal from worker " + workerID);
+		this.workerAcknowledgementSet.remove(workerID);
+
+		if (this.workerAcknowledgementSet.size() == 0) {
+			if (this.confirmHalt() == false)
+				voteAgain();
+			else {
+				finishLocalCompute();
+			}
+		}
+	}
+
+	private boolean confirmHalt() throws RemoteException {
+		for (String workerID : this.activeWorkerSet) {
+			if (this.workerProxyMap.get(workerID).isComputing()) {
+				log.info(workerID + " is working.");
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Vote to halt again.
+	 */
+	private void voteAgain() throws RemoteException {
+		log.info("Vote again.");
+
+		this.workerAcknowledgementSet.clear();
+		this.workerAcknowledgementSet.addAll(this.activeWorkerSet);
+
+		for (String workerID : this.activeWorkerSet) {
+			this.workerProxyMap.get(workerID).voteAgain();
+		}
 	}
 }

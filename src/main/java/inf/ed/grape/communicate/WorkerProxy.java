@@ -80,11 +80,9 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 				worker.addPartition(partition);
 			} catch (RemoteException e) {
 				log.fatal("Remote Exception received from the Worker " + workerID);
-				log.info("RemoteException: Removing Worker from Master");
 				coordinator.removeWorker(workerID);
 			} catch (InterruptedException e) {
-				log.fatal("Thread interrupted");
-				log.info("InterruptedException: Removing Worker from Master");
+				log.fatal("InterruptedException: Removing Worker " + workerID + " from Master");
 				coordinator.removeWorker(workerID);
 			}
 		}
@@ -197,9 +195,6 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 	public void setWorkerPartitionInfo(Map<Integer, Integer> vertexIdToPartitionId,
 			Map<Integer, String> mapPartitionIdToWorkerId, Map<String, Worker> mapWorkerIdToWorker)
 			throws RemoteException {
-
-		log.debug("workerProxy.totalPartitions=" + totalPartitions);
-
 		worker.setWorkerPartitionInfo(totalPartitions, vertexIdToPartitionId,
 				mapPartitionIdToWorkerId, mapWorkerIdToWorker);
 	}
@@ -270,4 +265,16 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 			throws RemoteException {
 		this.coordinator.receivePartialResults(workerID, mapPartitionID2Result);
 	}
+
+	public void vote2halt(String workerID) throws RemoteException {
+		this.coordinator.vote2halt(workerID);
+	}
+
+	public boolean isComputing() throws RemoteException {
+		return this.worker.isComputing();
+	}
+
+	public void voteAgain() throws RemoteException {
+		this.worker.voteAgain();
+	};
 }

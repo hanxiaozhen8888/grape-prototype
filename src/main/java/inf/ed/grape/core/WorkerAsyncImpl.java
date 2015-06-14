@@ -1,5 +1,6 @@
 package inf.ed.grape.core;
 
+import inf.ed.grape.app.simulation.SimulationResult;
 import inf.ed.grape.communicate.Worker2Coordinator;
 import inf.ed.grape.communicate.Worker2WorkerProxy;
 import inf.ed.grape.graph.Partition;
@@ -253,8 +254,9 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 					e1.printStackTrace();
 				}
 				while (flagLocalCompute || flagLastStep) {
-					log.debug(this + "superstep loop start for superstep " + superstep
-							+ "laststep = " + flagLastStep);
+
+					log.debug("process a compute.");
+
 					try {
 
 						LocalComputeTask localComputeTask = currentLocalComputeTaskQueue.take();
@@ -264,9 +266,9 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 						if (flagLastStep) {
 
-							if (KV.ENABLE_ASSEMBLE == false) {
+							log.debug("last step.");
 
-								System.out.println(KV.OUTPUT_DIR);
+							if (KV.ENABLE_ASSEMBLE == false) {
 								String dir = KV.OUTPUT_DIR.substring(1, KV.OUTPUT_DIR.length() - 1);
 
 								localComputeTask.getResult()
@@ -286,6 +288,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 								/** begin step. initial compute */
 								localComputeTask.compute(workingPartition);
 								updateOutgoingMessages(localComputeTask.getMessages());
+								superstep++;
 							}
 
 							else {
@@ -327,7 +330,6 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 	private synchronized void checkAndSendMessage() {
 
-		log.debug("synchronized checkAndSendMessage!");
 		if ((!stopSendingMessage) && (nextLocalComputeTasksQueue.size() == totalPartitionsAssigned)) {
 			log.debug("sendMessage!");
 
@@ -336,9 +338,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 			if (flagLastStep) {
 
 				flagLastStep = false;
-
 				if (KV.ENABLE_ASSEMBLE) {
-					log.debug("assemble = true. " + this + "send partital result");
 					try {
 						coordinatorProxy.sendPartialResult(workerID, partialResults);
 					} catch (RemoteException e) {
@@ -349,34 +349,20 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
 			else {
 
-				log.debug(" Worker: Superstep " + superstep + " completed.");
-
 				flagLocalCompute = false;
 
 				for (Entry<String, List<Message<?>>> entry : outgoingMessages.entrySet()) {
 					try {
 						worker2WorkerProxy.sendMessage(entry.getKey(), entry.getValue());
 					} catch (RemoteException e) {
-						System.out.println("Can't send message to Worker " + entry.getKey()
+						log.error("Can't send message to Worker " + entry.getKey()
 								+ " which is down");
+						e.printStackTrace();
 					}
 				}
 
-				// This worker will be active only if it has some messages
-				// queued up in the next superstep.
-				// activeWorkerSet will have all the workers who will be
-				// active
-				// in the next superstep.
-				Set<String> activeWorkerSet = new HashSet<String>();
-				activeWorkerSet.addAll(outgoingMessages.keySet());
-				if (currentIncomingMessages.size() > 0) {
-					activeWorkerSet.add(workerID);
-				}
-				// Send a message to the Master saying that this superstep
-				// has
-				// been completed.
 				try {
-					coordinatorProxy.localComputeCompleted(workerID, activeWorkerSet);
+					this.vote2halt();
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
@@ -597,8 +583,6 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 		 * compute task and status from the last step.
 		 * */
 
-		this.superstep = superstep;
-
 		// Put all elements in current incoming queue to previous incoming queue
 		// and clear the current incoming queue.
 		this.previousIncomingMessages.clear();
@@ -645,18 +629,10 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 				e.printStackTrace();
 			}
 		}
-
-		// new PageRankTask(query, entry.getKey());
-
-		log.info("Instantiate " + this.nextLocalComputeTasksQueue.size() + " local task.");
-
 	}
 
 	@Override
 	public void processPartialResult() throws RemoteException {
-
-		log.debug("processPartialResult.");
-
 		BlockingQueue<LocalComputeTask> temp = new LinkedBlockingDeque<LocalComputeTask>(
 				nextLocalComputeTasksQueue);
 		this.nextLocalComputeTasksQueue.clear();
@@ -665,5 +641,23 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 		this.flagLastStep = true;
 		this.stopSendingMessage = false;
 
+	}
+
+	@Override
+	public void vote2halt() throws RemoteException {
+		coordinatorProxy.vote2halt(workerID);
+	}
+
+	@Override
+	public void voteAgain() throws RemoteException {
+		if (!this.isComputing()) {
+			this.coordinatorProxy.vote2halt(this.workerID);
+		}
+	}
+
+	@Override
+	public boolean isComputing() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

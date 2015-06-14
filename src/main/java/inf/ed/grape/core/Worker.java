@@ -16,8 +16,7 @@ public interface Worker extends Remote {
 
 	public int getNumThreads() throws RemoteException;
 
-	public void setCoordinatorProxy(Worker2Coordinator coordinatorProxy)
-			throws RemoteException;
+	public void setCoordinatorProxy(Worker2Coordinator coordinatorProxy) throws RemoteException;
 
 	public void setQuery(Query query) throws RemoteException;
 
@@ -25,26 +24,29 @@ public interface Worker extends Remote {
 
 	public void addPartitionID(int partitionID) throws RemoteException;
 
-	public void addPartitionList(List<Partition> workerPartitions)
-			throws RemoteException;
+	public void addPartitionList(List<Partition> workerPartitions) throws RemoteException;
 
-	public void addPartitionIDList(List<Integer> workerPartitionIDs)
-			throws RemoteException;
+	public void addPartitionIDList(List<Integer> workerPartitionIDs) throws RemoteException;
 
 	public void setWorkerPartitionInfo(int totalPartitionsAssigned,
 			Map<Integer, Integer> mapVertexIdToPartitionId,
-			Map<Integer, String> mapPartitionIdToWorkerId,
-			Map<String, Worker> mapWorkerIdToWorker) throws RemoteException;
+			Map<Integer, String> mapPartitionIdToWorkerId, Map<String, Worker> mapWorkerIdToWorker)
+			throws RemoteException;
 
 	public void halt() throws RemoteException;
 
-	public void receiveMessage(List<Message<?>> incomingMessages)
-			throws RemoteException;
+	public void receiveMessage(List<Message<?>> incomingMessages) throws RemoteException;
 
 	public void nextLocalCompute(long superstep) throws RemoteException;
 
 	public void processPartialResult() throws RemoteException;
 
+	public void vote2halt() throws RemoteException;
+
 	public void shutdown() throws RemoteException;
+
+	public void voteAgain() throws RemoteException;
+
+	public boolean isComputing() throws RemoteException;
 
 }

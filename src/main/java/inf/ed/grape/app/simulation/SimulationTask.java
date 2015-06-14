@@ -3,10 +3,13 @@ package inf.ed.grape.app.simulation;
 import inf.ed.grape.graph.Partition;
 import inf.ed.grape.interfaces.LocalComputeTask;
 import inf.ed.grape.interfaces.Message;
+import inf.ed.grape.interfaces.Query;
 import inf.ed.graph.structure.Pair;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -16,12 +19,11 @@ import org.apache.logging.log4j.Logger;
 
 public class SimulationTask extends LocalComputeTask {
 
-	public HashMap<Integer, HashSet<Integer>> sim; // node -> match nodes
-	public HashMap<Integer, HashSet<Integer>> premv; // node -> cannot match
-														// parents
-	private HashMap<Integer, HashSet<Integer>> pre; // node -> parents
-	private HashMap<Integer, HashSet<Integer>> suc; // node -> children
-	private HashSet<Integer> PSET; // set of all parent nodes
+	public Int2ObjectMap<IntSet> sim; // node -> match nodes
+	public Int2ObjectMap<IntSet> premv; // node -> cannot match parents
+	private Int2ObjectMap<IntSet> pre; // node -> parents
+	private Int2ObjectMap<IntSet> suc; // node -> children
+	private IntSet PSET; // set of all parent nodes
 
 	static Logger log = LogManager.getLogger(SimulationTask.class);
 
@@ -31,20 +33,23 @@ public class SimulationTask extends LocalComputeTask {
 	 * Constructor
 	 */
 	public SimulationTask() {
-		this.sim = new HashMap<Integer, HashSet<Integer>>(); // node -> match
-																// nodes
-		this.premv = new HashMap<Integer, HashSet<Integer>>(); // node -> can
-																// not match
-																// parents
-		this.pre = new HashMap<Integer, HashSet<Integer>>(); // node -> parents
-		this.suc = new HashMap<Integer, HashSet<Integer>>(); // node -> children
-		this.PSET = new HashSet<Integer>(); // set of all parent nodes
+		// this.sim = ((SimulationResult) generatedResult).getSim();
+		this.premv = new Int2ObjectOpenHashMap<IntSet>();
+		this.pre = new Int2ObjectOpenHashMap<IntSet>();
+		this.suc = new Int2ObjectOpenHashMap<IntSet>();
+		this.PSET = new IntOpenHashSet();
+	}
+
+	@Override
+	public void init(Query query, int partitionID) {
+		super.init(query, partitionID);
+		this.sim = ((SimulationResult) generatedResult).getSim();
 	}
 
 	public String displayResult() {
 		String ret = "";
 		for (int u : this.sim.keySet()) {
-			HashSet<Integer> vset = this.sim.get(u);
+			IntSet vset = this.sim.get(u);
 			String s = "";
 			for (Integer v : vset) {
 				s = v + ", " + s;
@@ -56,7 +61,7 @@ public class SimulationTask extends LocalComputeTask {
 
 	private void initIndex(Partition partition) {
 		for (int vID : partition.getGraph().allVertices().keySet()) {
-			HashSet<Integer> pset = new HashSet<Integer>(); // initialise pset
+			IntSet pset = new IntOpenHashSet(); // initialise pset
 			for (int parentID : partition.getGraph().getParents(vID)) {
 				pset.add(parentID);
 			}
@@ -66,7 +71,7 @@ public class SimulationTask extends LocalComputeTask {
 				PSET.addAll(pset);
 			}
 
-			HashSet<Integer> cset = new HashSet<Integer>(); // initialise cset
+			IntSet cset = new IntOpenHashSet(); // initialise cset
 			for (int childID : partition.getGraph().getChildren(vID)) {
 				cset.add(childID);
 			}
@@ -86,16 +91,16 @@ public class SimulationTask extends LocalComputeTask {
 
 		for (int u : pattern.getGraph().allVertices().keySet()) {
 
-			HashSet<Integer> posmat = new HashSet<Integer>();
+			IntSet posmat = new IntOpenHashSet();
 			/* a node set which contains nodes that possibly match parents of v */
-			HashSet<Integer> remove = new HashSet<Integer>();
+			IntSet remove = new IntOpenHashSet();
 			/* node set contains nodes that cannot match any parent node of v */
 
 			remove.addAll(this.PSET); // all parents node
 
-			HashSet<Integer> simset = this.sim.get(u); // sim(u)
+			IntSet simset = this.sim.get(u); // sim(u)
 			if (simset == null) {
-				simset = new HashSet<Integer>(); // initialize simset
+				simset = new IntOpenHashSet(); // initialize simset
 			}
 
 			if (pattern.getGraph().getChildren(u).size() == 0) {
@@ -143,7 +148,7 @@ public class SimulationTask extends LocalComputeTask {
 		Queue<Integer> q = new LinkedList<Integer>(); // those node with non
 														// empty premv
 		for (int n : this.premv.keySet()) {
-			HashSet<Integer> hs = this.premv.get(n);
+			IntSet hs = this.premv.get(n);
 			if (!hs.isEmpty()) {
 				q.add(n);
 			}
@@ -156,14 +161,14 @@ public class SimulationTask extends LocalComputeTask {
 
 			int n = q.poll();
 			for (int u : pattern.getGraph().getParents(n)) {
-				HashSet<Integer> sim = this.sim.get(u);
+				IntSet sim = this.sim.get(u);
 				for (int w : this.premv.get(n)) {
 					if (sim.contains(w)) {
 						sim.remove(w); // w in G can not match u in P
 
 						log.debug("remove " + w);
 						if (!partition.isIncomingVertex(w) && !partition.isVirtualVertex(w)) {
-							log.debug(w + "is inner vertex");
+							log.debug(w + " is inner vertex");
 							for (int parent : partition.getGraph().getParents(w)) {
 								if (partition.isIncomingVertex(parent)) {
 									log.debug("add new message: n=" + n + ", u=" + u + ", sim="
@@ -175,7 +180,7 @@ public class SimulationTask extends LocalComputeTask {
 							}
 						}
 						for (int ww : partition.getGraph().getParents(w)) {
-							HashSet<Integer> cset = new HashSet<Integer>();
+							IntSet cset = new IntOpenHashSet();
 							cset.addAll(this.suc.get(ww));
 							cset.retainAll(sim);
 							if (cset.isEmpty()) {
@@ -210,7 +215,7 @@ public class SimulationTask extends LocalComputeTask {
 			int u = pair.x;
 			int v = pair.y;
 
-			HashSet<Integer> simu = this.sim.get(u);
+			IntSet simu = this.sim.get(u);
 			Queue<Integer> q = new LinkedList<Integer>(); // those node with non
 			// empty premv
 			// assert(simu.contains(node));
@@ -228,7 +233,7 @@ public class SimulationTask extends LocalComputeTask {
 			}
 
 			for (int ww : partition.getGraph().getParents(v)) {
-				HashSet<Integer> cset = new HashSet<Integer>();
+				IntSet cset = new IntOpenHashSet();
 				cset.addAll(this.suc.get(ww));
 				cset.retainAll(simu);
 				if (cset.isEmpty()) {
@@ -242,7 +247,7 @@ public class SimulationTask extends LocalComputeTask {
 			while (!q.isEmpty()) {
 				int n = q.poll();
 				for (int uu : partition.getGraph().getParents(n)) {
-					HashSet<Integer> sim = this.sim.get(uu);
+					IntSet sim = this.sim.get(uu);
 					for (int w : this.premv.get(n)) {
 						if (sim.contains(w)) {
 							sim.remove(w); // w in G can not match u in P
@@ -252,7 +257,7 @@ public class SimulationTask extends LocalComputeTask {
 								generatedMessages.add(m);
 							}
 							for (int ww : partition.getGraph().getParents(w)) {
-								HashSet<Integer> cset = new HashSet<Integer>();
+								IntSet cset = new IntOpenHashSet();
 								cset.addAll(this.suc.get(ww));
 								cset.retainAll(sim);
 								if (cset.isEmpty()) {

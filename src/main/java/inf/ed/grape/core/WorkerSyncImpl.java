@@ -41,7 +41,7 @@ import org.apache.logging.log4j.Logger;
 
 public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 
-	private static final long serialVersionUID = 8653095027537771705L;
+	private static final long serialVersionUID = 1L;
 
 	/** The number of threads. */
 	private int numThreads;
@@ -658,5 +658,20 @@ public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 		this.flagLastStep = true;
 		this.stopSendingMessage = false;
 
+	}
+
+	@Override
+	public void vote2halt() throws RemoteException {
+		throw new IllegalArgumentException("this mothod doesn't support in synchronised model.");
+	}
+
+	@Override
+	public void voteAgain() throws RemoteException {
+		throw new IllegalArgumentException("this mothod doesn't support in synchronised model.");
+	}
+
+	@Override
+	public boolean isComputing() {
+		throw new IllegalArgumentException("this mothod doesn't support in synchronised model.");
 	}
 }

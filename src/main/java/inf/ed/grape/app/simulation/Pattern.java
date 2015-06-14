@@ -36,4 +36,8 @@ public class Pattern implements Query, Serializable {
 		return true;
 	}
 
+	public String toString() {
+		graph.display(1000);
+		return "";
+	}
 }
