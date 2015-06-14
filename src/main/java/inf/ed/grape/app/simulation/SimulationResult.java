@@ -28,12 +28,10 @@ public class SimulationResult extends Result {
 	@Override
 	public void assemblePartialResults(Collection<Result> partialResults) {
 
-		log.info("receive partial result");
-
 		for (Result result : partialResults) {
 			SimulationResult sr = (SimulationResult) result;
 
-			log.info(sr.getSim().toString());
+//			log.info(sr.getSim().toString());
 
 			for (int key : sr.getSim().keySet()) {
 				if (!this.sim.containsKey(key)) {

@@ -1,6 +1,5 @@
 package inf.ed.grape.core;
 
-import inf.ed.grape.app.simulation.SimulationResult;
 import inf.ed.grape.communicate.Worker2Coordinator;
 import inf.ed.grape.communicate.Worker2WorkerProxy;
 import inf.ed.grape.graph.Partition;
@@ -21,11 +20,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -42,7 +39,7 @@ import org.apache.logging.log4j.Logger;
 
 public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 
-	private static final long serialVersionUID = 8653095027537771705L;
+	private static final long serialVersionUID = 1L;
 
 	/** The number of threads. */
 	private int numThreads;
@@ -124,7 +121,7 @@ public class WorkerAsyncImpl extends UnicastRemoteObject implements Worker {
 			log.error(e);
 		}
 
-		this.workerID = "ASYNC_" + hostName + "_" + timestamp;
+		this.workerID = "async_" + hostName + "_" + timestamp;
 		this.partitions = new HashMap<Integer, Partition>();
 		this.currentLocalComputeTaskQueue = new LinkedBlockingDeque<LocalComputeTask>();
 		this.nextLocalComputeTasksQueue = new LinkedBlockingQueue<LocalComputeTask>();

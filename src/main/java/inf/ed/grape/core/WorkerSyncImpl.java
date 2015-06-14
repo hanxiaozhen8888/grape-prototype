@@ -123,7 +123,7 @@ public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 			log.error(e);
 		}
 
-		this.workerID = "SYNC_" + hostName + "_" + timestamp;
+		this.workerID = "sync_" + hostName + "_" + timestamp;
 		this.partitions = new HashMap<Integer, Partition>();
 		this.currentLocalComputeTaskQueue = new LinkedBlockingDeque<LocalComputeTask>();
 		this.nextLocalComputeTasksQueue = new LinkedBlockingQueue<LocalComputeTask>();
@@ -136,7 +136,7 @@ public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 		this.stopSendingMessage = false;
 
 		for (int i = 0; i < numThreads; i++) {
-			log.debug("Starting AsyncThread " + (i + 1));
+			log.debug("Starting syncThread " + (i + 1));
 			WorkerThread workerThread = new WorkerThread();
 			workerThread.setName(this.workerID + "_th" + i);
 			workerThread.start();
