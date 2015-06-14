@@ -442,6 +442,9 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	public synchronized void receivePartialResults(String workerID,
 			Map<Integer, Result> mapPartitionID2Result) {
 
+		log.debug("current ack set = " + this.workerAcknowledgementSet.toString());
+		log.debug("receive partitial results = " + workerID);
+
 		for (Entry<Integer, Result> entry : mapPartitionID2Result.entrySet()) {
 			resultMap.put(entry.getKey(), entry.getValue());
 		}
@@ -497,8 +500,9 @@ public class Coordinator extends UnicastRemoteObject implements Worker2Coordinat
 	}
 
 	private boolean confirmHalt() throws RemoteException {
+		log.info("confirming.");
 		for (String workerID : this.activeWorkerSet) {
-			if (this.workerProxyMap.get(workerID).isComputing()) {
+			if (!this.workerProxyMap.get(workerID).isHalt()) {
 				log.info(workerID + " is working.");
 				return false;
 			}

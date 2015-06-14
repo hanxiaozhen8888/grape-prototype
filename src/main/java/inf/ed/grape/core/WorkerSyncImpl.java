@@ -262,14 +262,14 @@ public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 								System.out.println(KV.OUTPUT_DIR);
 								String dir = KV.OUTPUT_DIR.substring(1, KV.OUTPUT_DIR.length() - 1);
 
-								localComputeTask.getResult()
+								localComputeTask.getPartialResult()
 										.writeToFile(
 												dir + workerID + localComputeTask.getPartitionID()
 														+ ".rlt");
 							}
 
 							partialResults.put(localComputeTask.getPartitionID(),
-									localComputeTask.getResult());
+									localComputeTask.getPartialResult());
 						}
 
 						else {
@@ -671,7 +671,7 @@ public class WorkerSyncImpl extends UnicastRemoteObject implements Worker {
 	}
 
 	@Override
-	public boolean isComputing() {
+	public boolean isHalt() {
 		throw new IllegalArgumentException("this mothod doesn't support in synchronised model.");
 	}
 }

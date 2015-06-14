@@ -4,6 +4,7 @@ import inf.ed.grape.graph.Partition;
 import inf.ed.grape.interfaces.LocalComputeTask;
 import inf.ed.grape.interfaces.Message;
 import inf.ed.grape.interfaces.Query;
+import inf.ed.grape.interfaces.Result;
 import inf.ed.graph.structure.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -163,18 +164,22 @@ public class SimulationTask extends LocalComputeTask {
 			for (int u : pattern.getGraph().getParents(n)) {
 				IntSet sim = this.sim.get(u);
 				for (int w : this.premv.get(n)) {
-					if (sim.contains(w)) {
+					if (sim.contains(w) && !partition.isVirtualVertex(w)
+							&& !partition.isIncomingVertex(w)) {
+						// if w is inner or virtual node, leave it.
 						sim.remove(w); // w in G can not match u in P
 
 						log.debug("remove " + w);
 						if (!partition.isIncomingVertex(w) && !partition.isVirtualVertex(w)) {
 							log.debug(w + " is inner vertex");
 							for (int parent : partition.getGraph().getParents(w)) {
+								log.debug("parent = " + parent);
+								log.debug("incommingvertex=" + partition.incomingVertices);
 								if (partition.isIncomingVertex(parent)) {
 									log.debug("add new message: n=" + n + ", u=" + u + ", sim="
 											+ sim + ", w=" + w + ", parent = " + parent);
 									Message<Pair<Integer>> m = new Message<Pair<Integer>>(
-											this.getPartitionID(), w, new Pair<Integer>(u, parent));
+											this.getPartitionID(), parent, new Pair<Integer>(u, w));
 									generatedMessages.add(m);
 								}
 							}
@@ -215,29 +220,23 @@ public class SimulationTask extends LocalComputeTask {
 			int u = pair.x;
 			int v = pair.y;
 
-			IntSet simu = this.sim.get(u);
-			Queue<Integer> q = new LinkedList<Integer>(); // those node with non
-			// empty premv
-			// assert(simu.contains(node));
-			if (!simu.contains(u))
-				return;
-			simu.remove(u); // node in G can not match status in P
-			// if (this.sim.get(status).contains(node))
-			// TODO: double-check here
-			if (partition.isIncomingVertex(v)) {
-				// System.out.println();
-				log.warn("virtual vertex: " + v);
-				Message<Pair<Integer>> m = new Message<Pair<Integer>>(this.getPartitionID(), v,
-						new Pair<Integer>(u, v));
-				generatedMessages.add(m);
-			}
+			log.debug("process u=" + u + ", v=" + v);
 
-			for (int ww : partition.getGraph().getParents(v)) {
+			IntSet simu = this.sim.get(u);
+			Queue<Integer> q = new LinkedList<Integer>();
+			/* those node with non empty premv */
+			if (!simu.contains(v)) {
+				log.debug("processed before.");
+				continue;
+			}
+			simu.remove(v);
+
+			for (int vv : partition.getGraph().getParents(v)) {
 				IntSet cset = new IntOpenHashSet();
-				cset.addAll(this.suc.get(ww));
+				cset.addAll(this.suc.get(vv));
 				cset.retainAll(simu);
 				if (cset.isEmpty()) {
-					this.premv.get(u).add(ww);
+					this.premv.get(u).add(vv);
 					if (!q.contains(u)) {
 						q.add(u);
 					}
@@ -246,15 +245,29 @@ public class SimulationTask extends LocalComputeTask {
 
 			while (!q.isEmpty()) {
 				int n = q.poll();
-				for (int uu : partition.getGraph().getParents(n)) {
+				for (int uu : pattern.getGraph().getParents(n)) {
 					IntSet sim = this.sim.get(uu);
 					for (int w : this.premv.get(n)) {
-						if (sim.contains(w)) {
-							sim.remove(w); // w in G can not match u in P
-							if (partition.isIncomingVertex(w)) {
-								Message<Pair<Integer>> m = new Message<Pair<Integer>>(
-										this.getPartitionID(), w, new Pair<Integer>(uu, w));
-								generatedMessages.add(m);
+						if (sim.contains(w) && !partition.isVirtualVertex(w)
+								&& !partition.isIncomingVertex(w)) {
+							// if w is inner or virtual node, leave it.
+							sim.remove(w); // w in G can not match uu in P
+							log.debug("remove " + w);
+							if (!partition.isIncomingVertex(w) && !partition.isVirtualVertex(w)) {
+								log.debug(w + " is inner vertex");
+								for (int parent : partition.getGraph().getParents(w)) {
+									log.debug("parent = " + parent);
+									log.debug("incommingvertex=" + partition.incomingVertices);
+									if (partition.isIncomingVertex(parent)) {
+										log.debug("add new message: n=" + n + ", uu=" + uu
+												+ ", sim=" + sim + ", w=" + w + ", parent = "
+												+ parent);
+										Message<Pair<Integer>> m = new Message<Pair<Integer>>(
+												this.getPartitionID(), parent, new Pair<Integer>(
+														uu, w));
+										generatedMessages.add(m);
+									}
+								}
 							}
 							for (int ww : partition.getGraph().getParents(w)) {
 								IntSet cset = new IntOpenHashSet();
@@ -272,7 +285,6 @@ public class SimulationTask extends LocalComputeTask {
 				}
 				this.premv.get(n).clear();
 			}
-
 		}
 
 		log.info("incremental compute finished. Ievaluation result:");
@@ -281,4 +293,11 @@ public class SimulationTask extends LocalComputeTask {
 		log.debug(generatedMessages.toString());
 	}
 
+	@Override
+	public void prepareResult(Partition partition) {
+		for (IntSet matches : this.sim.values()) {
+			matches.removeAll(partition.incomingVertices);
+			matches.removeAll(partition.outgoingVertices);
+		}
+	}
 }

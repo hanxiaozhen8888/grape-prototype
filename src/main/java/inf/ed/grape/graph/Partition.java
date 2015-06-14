@@ -30,8 +30,8 @@ public class Partition implements Serializable {
 
 	Graph<? extends Vertex, ? extends Edge> graph;
 
-	private IntSet outgoingVertices;
-	private IntSet incomingVertices;
+	public IntSet outgoingVertices;
+	public IntSet incomingVertices;
 
 	public Partition(int partitionID) {
 		this.partitionID = partitionID;

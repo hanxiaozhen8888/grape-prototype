@@ -31,7 +31,7 @@ public class SimulationResult extends Result {
 		for (Result result : partialResults) {
 			SimulationResult sr = (SimulationResult) result;
 
-//			log.info(sr.getSim().toString());
+			log.info(sr.getSim().toString());
 
 			for (int key : sr.getSim().keySet()) {
 				if (!this.sim.containsKey(key)) {

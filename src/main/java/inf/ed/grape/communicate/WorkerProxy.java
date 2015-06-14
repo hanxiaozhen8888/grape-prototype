@@ -270,8 +270,8 @@ public class WorkerProxy implements Runnable, Worker2Coordinator {
 		this.coordinator.vote2halt(workerID);
 	}
 
-	public boolean isComputing() throws RemoteException {
-		return this.worker.isComputing();
+	public boolean isHalt() throws RemoteException {
+		return this.worker.isHalt();
 	}
 
 	public void voteAgain() throws RemoteException {

@@ -47,6 +47,6 @@ public interface Worker extends Remote {
 
 	public void voteAgain() throws RemoteException;
 
-	public boolean isComputing() throws RemoteException;
+	public boolean isHalt() throws RemoteException;
 
 }
